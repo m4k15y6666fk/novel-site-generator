@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default("ja-JP") }}">
+    <head>
+        {% set data = files.parse(page.inputPath).data %}
+        {% for stuff in collections.all %}
+            {% if stuff.url == page.url %}
+                {% set data = stuff.data %}
+            {% endif %}
+        {% endfor %}
+
+        {% set collection_id = data.tags | string %}
+
+        {% set collection_data = {} %}
+        {% for abstract in collections.abstract %}
+            {% if path.parse(abstract.inputPath).name == collection_id %}
+                {% set collection_data = abstract.data %}
+            {% endif %}
+        {% endfor %}
+
+        {% set collections_fm = [] %}
+        {% for item in collections[collection_id] %}
+            {% set parsed = files.parse(item.inputPath) %}
+            {% set temp = item.data | addproperty("others", parsed) | addproperty("url", item.url) %}
+            {% if temp.publish %}
+                {% set collections_fm = collections_fm.concat(temp) %}
+            {% endif %}
+        {% endfor %}
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>{{ collection_data.title }}</title>
+
+        {% include "uikit.njk" %}
+
+        {% include "fonts_and_icons.njk" %}
+
+        <!-- highlight.js -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.6.0/build/styles/atom-one-dark.min.css">
+
+        <link rel="stylesheet" href="{{ "/assets/css/main.css" | url }}">
+        <script src="{{ "/assets/js/main.js" | url }}"></script>
+
+        {% if collection_data.r18 %}
+        <script src="{{ "/assets/js/r_18_redirection.js" | url }}"></script>
+        {% else %}
+        <script type="text/javascript">
+            window.addEventListener('load', _ => {
+                document.body.removeAttribute('hidden');
+            });
+        </script>
+        {% endif %}
+
+    </head>
+    <body class="uk-light uk-background-secondary" hidden>
+        <div uk-sticky="end: #navigation-ends-here; show-on-up: true; animation: uk-animation-slide-top; sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky" class="uk-sticky" style="">
+            <nav class="">
+                <div id="navigation-bar" class="uk-container uk-container-expand uk-background-secondary">
+                    <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                        <div class="uk-navbar-left">
+                            <a href="{{ "/" | url }}" class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                                home
+                            </a>
+                        </div>
+                        <div class="uk-navbar-right">
+                            <a href="#" id="theme-switcher" data-theme="none" class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                                light_mode
+                            </a>
+                            <a href="#" class="uk-icon-link material-symbols-outlined" uk-toggle="target: #offcanvas-slide" style="font-size: 2rem;">
+                                toc
+                            </a>
+                            <!--<a href="#" class="uk-icon-link" uk-icon="icon: list; ratio: 1.5" uk-toggle="target: #offcanvas-slide"></a>-->
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="offcanvas-slide" uk-offcanvas="overlay: true; flip: true;">
+            <div class="uk-offcanvas-bar">
+
+                <button class="uk-offcanvas-close" type="button" uk-close></button>
+
+                <ul class="uk-nav uk-nav-default">
+                    <li class="uk-nav-header" style="font-size: 1.25rem;">{{ collection_data.title }}</li>
+                    <li style="padding: 5px 0;">{{ collection_data.author }} 著</li>
+                    <li class="uk-nav-divider"></li>
+                    <li class="uk-nav-divider"></li>
+
+                    {% set many_story = [{ default: true }] %}
+                    {% set page_count = 0 %}
+                    {% set page_present = 0 %}
+
+                    {% set novel_chapters = collections_fm | sort(false, false, "chapter") %}
+                    {% set chapter_list = novel_chapters | groupby("chapter_title") %}
+                    {% for chapter_title, chapter in chapter_list %}
+                    <li class="uk-nav-header">{{ chapter_title }}</li>
+
+                    {% set novel_sections = chapter | sort(false, false, 'section') %}
+                    {% set section_list = novel_sections | groupby('section_title') %}
+                    {% for section_title, section in section_list %}
+                    <li class="uk-nav-header uk-margin-remove-top">{{ section_title }}</li>
+                    <li class="uk-nav-divider"></li>
+
+                    {% set novel_stories = section | sort(false, false, 'story') %}
+
+                    {% set many_story = many_story.concat(novel_stories) %}
+
+                    {% for story in novel_stories %}
+
+                    {% set page_count = page_count + 1 %}
+
+                    <li class="novel-toc-content">
+                        <a href="{{ story.url | url }}" style="display: flex; justify-content: space-between;">
+                            <span>{{ story.title }}</span>
+                            {% if story.title == data.title %}
+                            {% set page_present = page_count %}
+                            <span class="material-symbols-outlined" style="font-size: 1.5rem; color: #1e87f0;">menu_book</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="uk-nav-divider"></li>
+
+                    {% endfor %}
+
+                    {% endfor %}
+
+                    {% endfor %}
+
+                    <!--<li>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="padding: 5px 0; text-align: right;">
+                                <a href="#">
+                                    Item
+                                </a>
+                            </div>
+                            <div style="padding: 5px 0; text-align: right;">
+                                <span class="uk-icon-link material-symbols-outlined" style="font-size: 1.5rem; color: #39f;">
+                                    menu_book
+                                </span>
+                            </div>
+                        </div>
+                        <a href="#" style="display: flex; justify-content: space-between;">
+                            <span>第二話</span>
+                            <span class="material-symbols-outlined" style="font-size: 1.5rem; color: #1e87f0;">
+                                menu_book
+                            </span>
+                        </a>
+                    </li>
+                    <li class="uk-nav-divider"></li>
+                    <li><a href="#">第三話</a></li>
+                    <li class="uk-nav-divider"></li>-->
+                </ul>
+            </div>
+        </div>
+
+        {% set page_previous = page_present - 1 %}
+        {% set page_next = page_present + 1 %}
+
+        <div class="uk-padding-small uk-padding-remove-bottom" style="display: flex; justify-content: space-between;">
+            <a href="{{ "/" + collection_id | url }}" class=" uk-text-meta uk-text-left">
+                {{ collection_data.title }}
+            </a>
+            <span class="uk-text-meta uk-text-right">
+                {{ page_present }} / {{ collections_fm | length }}
+            </span>
+        </div>
+
+        {% if data.section == 1 and data.story == 1 %}
+        {% set chapter_heading = 'uk-text-center' %}
+        {% else %}
+        {% set chapter_heading = 'uk-text-meta uk-text-right' %}
+        {% endif %}
+
+        <div class="novel-chapter uk-padding-small uk-padding-remove-bottom {{ chapter_heading }}">
+            {{ data.chapter_title }}
+        </div>
+
+        {% if data.story == 1 %}
+        {% set section_heading = 'uk-text-center' %}
+        {% else %}
+        {% set section_heading = 'uk-text-meta uk-text-right' %}
+        {% endif %}
+
+        <div class="novel-section uk-padding-small {{ section_heading }}">
+            {{ data.section_title }}
+        </div>
+
+        <div class="uk-padding uk-padding-remove-vertical uk-flex uk-flex-between">
+            {% set previous_url = '#' %}
+            {% if data.publish and page_present != 1 %}
+                {% set previous_url = many_story[page_previous].url | url %}
+            {% endif %}
+            <a href="{{ previous_url }}">
+                {% if page_present != 1 %}
+                <span class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">undo</span>
+                {% endif %}
+            </a>
+
+            {% set next_url = '#' %}
+            {% if data.publish and page_present != collections_fm | length %}
+                {% set next_url = many_story[page_next].url | url %}
+            {% endif %}
+            <a href="{{ next_url }}">
+                {% if page_present != collections_fm | length %}
+                <span class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">arrow_forward</span>
+                {% endif %}
+            </a>
+        </div>
+
+        <div class="novel-title uk-padding-small uk-text-lead uk-text-center">
+            {{ data.title }}
+        </div>
+
+        <div class="novel-content uk-padding">
+            {{ content | safe }}
+        </div>
+
+        <div class="uk-padding uk-padding-remove-vertical uk-flex uk-flex-between">
+            <div class="uk-flex uk-flex-column">
+                {% if page_present != 1 %}
+                <a href="{{ previous_url }}" class="uk-text-center">
+                    <span class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                        undo
+                    </span>
+                </a>
+                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">前の話</span>
+                {% endif %}
+            </div>
+
+            <div class="uk-flex uk-flex-column">
+                {% if page_present != collections_fm | length %}
+                <a href="{{ next_url }}" class="uk-text-center">
+                    <span class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                        arrow_forward
+                    </span>
+                </a>
+                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">次の話</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% from "copyright.njk" import "copyright" %}
+        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=collection_data.author) }}
+
+        <div id="navigation-ends-here"></div>
+    </body>
+</html>

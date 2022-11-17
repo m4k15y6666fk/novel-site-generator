@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="ja-JP">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>sort test</title>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+
+        <!-- UIkit CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/css/uikit.min.css" />
+
+        <!-- UIkit JS -->
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
+
+        <script type="text/javascript">
+            function start() {
+                const addButton = document.querySelector('#add');
+
+                addButton.addEventListener('click', (e) => {
+                    UIkit.modal.prompt(
+                        '新しいリポジトリを作成：',
+                        'repo-' + Date.now()
+                    )
+                    .then((data) => {
+                        if (data.length > 0) {
+                            location.href = location.origin + '/init/?repo=' + data;
+                        } else {
+                            throw new Error('write title');
+                        }
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+                })
+            }
+            document.addEventListener('DOMContentLoaded', start);
+        </script>
+
+    </head>
+    <body>
+        <button id="add" type="button" name="button">add</button>
+        <p>{{ home }}</p>
+        <ul>
+            {% for item in repos %}
+            <li>
+                <a href="/init/?repo={{ item.name }}">{{ item.name }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+
+    </body>
+</html>

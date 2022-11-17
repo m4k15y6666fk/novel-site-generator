@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="ja-JP">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>sort test</title>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+
+        <!-- UIkit CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/css/uikit.min.css" />
+
+        <!-- UIkit JS -->
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
+
+        <!-- jsDelivr :: Sortable :: Latest (https://www.jsdelivr.com/package/npm/sortablejs) -->
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+        {% include ".template/config/sort/script.njk" %}
+
+    </head>
+    <body>
+        <nav id="navigation-bar" class="uk-background-muted">
+            <div class="uk-container uk-container-expand">
+                <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                    <div class="uk-navbar-left">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/config" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                home
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ホーム</span>
+                        </div>
+                        <a href="#" class="uk-text-meta">
+                            ID: {{ id }}
+                        </a>
+                    </div>
+                    <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" class="uk-icon-link material-symbols-outlined uk-text-center" uk-toggle="#trash-chapter" style="font-size: 2rem;">
+                                delete
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">チャプター</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" class="uk-icon-link material-symbols-outlined uk-text-center" uk-toggle="#trash-section" style="font-size: 2rem;">
+                                delete
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">セクション</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" class="uk-icon-link material-symbols-outlined uk-text-center" uk-toggle="#trash-story" style="font-size: 2rem;">
+                                delete
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ストーリー</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="change" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                save
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">保存</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+
+        <div class="uk-flex uk-padding" uk-grid>
+            <div class="parent uk-width-2-3" uk-sortable="group: parent; handle: .chapter-handle;">
+
+
+                {% for chapter in chapters %}
+                <div class='uk-card uk-card-default uk-card-small uk-margin'>
+                    <div class="uk-card-header">
+                        <h3>
+                            <span class="material-symbols-outlined chapter-handle" style="padding-right: 1rem; vertical-align: middle;">
+                                open_with
+                            </span>
+                            <span class="chapters" data-path="{{ chapter.path }}" data-title="{{ chapter.chapter_title }}">
+                                {{ chapter.chapter_title }}
+                            </span>
+                        </h3>
+                    </div>
+
+                    <div class="uk-card-body">
+                        <ul uk-accordion="multiple: true;" class="child uk-padding-small" uk-sortable="group: child; handle: .section-handle;">
+                            {% for section in chapter.child %}
+                        	<li>
+                                <span class="uk-accordion-title">
+                                    <span class="material-symbols-outlined section-handle" style="padding-right: 1rem; vertical-align: middle;">
+                                        open_with
+                                    </span>
+                                    <span class="sections" data-path="{{ section.path }}" data-title="{{ section.section_title }}">
+                                        {{ section.section_title }}
+                                    </span>
+                                </span>
+                                <ul class="gchild uk-accordion-content uk-list uk-list-divider uk-padding-small" uk-sortable="group: gchild; handle: .story-handle;">
+                                    {% for story in section.child %}
+                                    <li>
+                                        <span class="material-symbols-outlined story-handle" style="padding-right: 1rem; vertical-align: middle;">
+                                            open_with
+                                        </span>
+                                        <span class="story"
+                                              data-path="{{ story.path }}"
+                                              data-publish="{{ story.attributes.publish }}"
+                                              data-title="{{ story.attributes.title }}">
+                                            {{ story.attributes.title }}
+                                        </span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+
+
+            </div>
+
+
+            <div class="uk-flex uk-flex-column uk-width-expand">
+                <div id="trash-chapter" class="uk-width-expand" hidden>
+                    <div class="uk-card uk-card-default uk-margin">
+                        <div class="uk-card-header">
+                            <h4>ゴミ箱: Chapter</h4>
+                        </div>
+                        <div class="uk-card-body">
+                            <ul class="uk-list uk-list-divider" uk-sortable="group: parent;">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="trash-section" class="uk-width-expand" hidden>
+                    <div class="uk-card uk-card-default uk-margin">
+                        <div class="uk-card-header">
+                            <h4>ゴミ箱: Section</h4>
+                        </div>
+                        <div class="uk-card-body">
+                            <ul class="uk-list uk-list-divider" uk-sortable="group: child;">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="trash-story" class="uk-width-expand" hidden>
+                    <div class="uk-card uk-card-default uk-margin">
+                        <div class="uk-card-header">
+                            <h4>ゴミ箱: Story</h4>
+                        </div>
+                        <div class="uk-card-body">
+                            <ul class="uk-list uk-list-divider" uk-sortable="group: gchild;">
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </body>
+</html>

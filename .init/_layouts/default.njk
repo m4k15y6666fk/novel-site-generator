@@ -1,0 +1,20 @@
+---
+---
+
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>{{ page.title }}</title>
+
+        {% include "nunjucks/uikit.njk" %}
+
+        {% include "nunjucks/fonts_and_icons.njk" %}
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.6.0/styles/atom-one-dark.min.css">
+    </head>
+    <body>
+        {{ content | safe }}
+    </body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default("ja-JP") }}">
+    <head>
+        {% set data = files.parse(page.inputPath).data %}
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>{{ data.title }}</title>
+
+        {% include "uikit.njk" %}
+
+        {% include "fonts_and_icons.njk" %}
+
+        <link rel="stylesheet" href="{{ "/assets/css/main.css" | url }}">
+        <script src="{{ "/assets/js/main.js" | url }}"></script>
+
+        {% if data.r18 %}
+        <script src="{{ "/assets/js/r_18_redirection.js" | url }}"></script>
+        {% else %}
+        <script type="text/javascript">
+            window.addEventListener('load', _ => {
+                document.body.removeAttribute('hidden');
+            });
+        </script>
+        {% endif %}
+
+    </head>
+    <body class="uk-light uk-background-secondary" hidden>
+        <div uk-sticky="end: #navigation-ends-here; show-on-up: true; animation: uk-animation-slide-top; sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky" class="uk-sticky" style="">
+            <nav class="">
+                <div id="navigation-bar" class="uk-container uk-container-expand uk-background-secondary">
+                    <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                        <div class="uk-navbar-left">
+                            <a href="{{ "/" | url }}" class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                                home
+                            </a>
+                        </div>
+                        <div class="uk-navbar-right">
+                            <a href="#" id="theme-switcher" data-theme="none" class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                                light_mode
+                            </a>
+                            <!--<a href="#" class="uk-icon-link material-symbols-outlined" uk-toggle="target: #offcanvas-slide" style="font-size: 2rem;">
+                                toc
+                            </a>-->
+                            <!--<a href="#" class="uk-icon-link" uk-icon="icon: list; ratio: 1.5" uk-toggle="target: #offcanvas-slide"></a>-->
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <h2 class="uk-text-center uk-padding-small uk-margin-remove">{{ data.title }}</h2>
+        <p class="uk-text-center uk-padding-small uk-margin-remove">{{ data.author }} 著</p>
+
+        <div class="uk-padding uk-padding-remove-bottom">
+            <hr>
+
+            <button class="uk-button uk-button-default uk-align-center uk-margin-bottom" uk-toggle="target: #novel_abstract" type="button">
+                <span uk-icon="thumbnails"></span>
+                <span>あらすじ</span>
+            </button>
+            <div id="novel_abstract" class="novel-content">
+                {% set abstract = path.join([path.base, 'short_abstract/', path.parse(page.inputPath).base]) %}
+                {% renderFile abstract %}
+            </div>
+        </div>
+
+        <div class="uk-padding uk-padding-remove-top">
+            <button class="uk-button uk-button-default uk-align-center uk-margin-top" uk-toggle="target: #novel_main_content" type="button">
+                <span uk-icon="table"></span>
+                <span>本編</span>
+            </button>
+            <div id="novel_main_content" class="novel-content" hidden>
+                {{ content | safe }}
+            </div>
+        </div>
+
+        {% from "copyright.njk" import "copyright" %}
+        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=data.author) }}
+
+        <div id="navigation-ends-here"></div>
+    </body>
+</html>

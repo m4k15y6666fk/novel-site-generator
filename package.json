@@ -1,0 +1,21 @@
+{
+  "name": "novel_site_generator",
+  "version": "0.0.1",
+  "description": "",
+  "main": "config.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "M4K-15Y-6666-FK",
+  "license": "ISC",
+  "devDependencies": {
+    "@11ty/eleventy": "^1.0.2",
+    "commander": "^9.4.1",
+    "electron": "^21.2.3",
+    "express": "^4.18.2",
+    "front-matter": "^4.0.2",
+    "highlight.js": "^11.6.0"
+  }
+}

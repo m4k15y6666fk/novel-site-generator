@@ -1,0 +1,113 @@
+
+<script type="text/javascript">
+
+
+function start() {
+    const button = document.querySelector('#change');
+
+    button.addEventListener('click', _ => {
+        let chapters = document.querySelectorAll('.chapters');
+        let xxx = document.querySelectorAll('.parent > div > div.uk-card-body');
+
+        let sections = [];
+        let n = 1;
+        while (n <= {{ chapters | length }}) {
+            try {
+                sections.push(xxx[n - 1].querySelectorAll('.child > li > span > .sections') || []);
+            } catch {
+                sections.push([]);
+            }
+            n++;
+        }
+
+        //let yyy = document.querySelectorAll(".child > li > .gchild > li > .stor");
+
+        let stories = [];
+        let l = 1;
+        while (l <= {{ chapters | length }}) {
+            let yyy = xxx[l - 1].querySelectorAll('.child > li');
+
+            let kari_stories = [];
+            let ll = 1;
+            while (ll <= yyy.length) {
+                try {
+                    kari_stories.push(yyy[ll - 1].querySelectorAll(".gchild > li > .story") || []);
+                } catch {
+                    kari_stories.push([]);
+                }
+                ll++;
+            }
+
+            stories.push(kari_stories);
+            l++;
+        }
+
+
+
+        let new_chapters = [];
+        let k = 0;
+        while (k < chapters.length) {
+            new_chapters.push({
+                path: chapters[k].dataset.path,
+                chapter: k + 1,
+                chapter_title: chapters[k].dataset.title,
+                child: []
+            });
+
+            let j = 0;
+            while (j < sections[k].length) {
+                new_chapters[k].child.push({
+                    path: sections[k][j].dataset.path,
+                    section: j + 1,
+                    section_title: sections[k][j].dataset.title,
+                    child: []
+                });
+
+                let d = 0;
+                while (d < stories[k][j].length) {
+                    new_chapters[k].child[j].child.push({
+                        path: stories[k][j][d].dataset.path,
+                        story: d + 1,
+                        publish: stories[k][j][d].dataset.publish,
+                        title: stories[k][j][d].dataset.title
+                    });
+                    d++;
+                }
+
+                j++;
+            }
+
+            k++;
+        }
+
+        console.log(new_chapters);
+
+
+
+        fetch('/config/sort/save/' + location.search, {
+            method: 'POST', // or 'PUT'
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(new_chapters),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.redirection) {
+                location.reload()
+            } else {
+                throw new Error('Error!')
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+
+
+
+    });
+}
+document.addEventListener('DOMContentLoaded', start);
+
+
+</script>

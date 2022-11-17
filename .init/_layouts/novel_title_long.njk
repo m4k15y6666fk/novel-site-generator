@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default("ja-JP") }}">
+    <head>
+        {% set collection_id = path.parse(page.inputPath).name %}
+
+        {% set data = files.parse(page.inputPath).data %}
+        {% for abstract in collections.abstract %}
+            {% if abstract.url == page.url %}
+                {% set data = abstract.data %}
+            {% endif %}
+        {% endfor %}
+
+        {% set collections_fm = [] %}
+        {% for item in collections[collection_id] %}
+            {% set parsed = files.parse(item.inputPath) %}
+            {% set temp = item.data | addproperty("others", parsed) | addproperty("url", item.url) %}
+            {% if temp.publish %}
+                {% set collections_fm = collections_fm.concat(temp) %}
+            {% endif %}
+        {% endfor %}
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>{{ data.title }}</title>
+
+        {% include "uikit.njk" %}
+
+        {% include "fonts_and_icons.njk" %}
+
+        <link rel="stylesheet" href="{{ "/assets/css/main.css" | url }}">
+        <script src="{{ "/assets/js/main.js" | url }}"></script>
+
+        {% if data.r18 %}
+        <script src="{{ "/assets/js/r_18_redirection.js" | url }}"></script>
+        {% else %}
+        <script type="text/javascript">
+            window.addEventListener('load', _ => {
+                document.body.removeAttribute('hidden');
+            });
+        </script>
+        {% endif %}
+
+    </head>
+    <body class="uk-light uk-background-secondary" hidden>
+        <div uk-sticky="end: #navigation-ends-here; show-on-up: true; animation: uk-animation-slide-top; sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky" class="uk-sticky" style="">
+            <nav class="">
+                <div id="navigation-bar" class="uk-container uk-container-expand uk-background-secondary">
+                    <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                        <div class="uk-navbar-left">
+                            <a href="{{ "/" | url }}" class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                                home
+                            </a>
+                        </div>
+                        <div class="uk-navbar-right">
+                            <a href="#" id="theme-switcher" data-theme="none" class="uk-icon-link material-symbols-outlined" style="font-size: 2rem;">
+                                light_mode
+                            </a>
+                            <a href="#" class="uk-icon-link material-symbols-outlined" uk-toggle="target: #offcanvas-slide" style="font-size: 2rem;">
+                                toc
+                            </a>
+                            <!--<a href="#" class="uk-icon-link" uk-icon="icon: list; ratio: 1.5" uk-toggle="target: #offcanvas-slide"></a>-->
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="offcanvas-slide" uk-offcanvas="overlay: true; flip: true;">
+            <div class="uk-offcanvas-bar">
+
+                <button class="uk-offcanvas-close" type="button" uk-close></button>
+
+                <ul class="uk-nav uk-nav-default">
+                    <li class="uk-nav-header" style="font-size: 1.25rem;">{{ data.title }}</li>
+                    <li style="padding: 5px 0;">{{ data.author }} 著</li>
+                    <li class="uk-nav-divider"></li>
+                    <li class="uk-nav-divider"></li>
+
+                    {% set novel_chapters = collections_fm | sort(false, false, "chapter") %}
+                    {% set chapter_list = novel_chapters | groupby("chapter_title") %}
+                    {% for chapter_title, chapter in chapter_list %}
+                    <li class="uk-nav-header">{{ chapter_title }}</li>
+
+                    {% set novel_sections = chapter | sort(false, false, 'section') %}
+                    {% set section_list = novel_sections | groupby('section_title') %}
+                    {% for section_title, section in section_list %}
+                    <li class="uk-nav-header uk-margin-remove-top">{{ section_title }}</li>
+                    <li class="uk-nav-divider"></li>
+
+                    {% set novel_stories = section | sort(false, false, 'story') %}
+                    {% for story in novel_stories %}
+                    <li class="novel-toc-content">
+                        <a href="{{ story.url | url }}" style="display: flex; justify-content: space-between;">
+                            <span>{{ story.title }}</span>
+                            {% if story.title == data.title %}
+                            <span class="material-symbols-outlined" style="font-size: 1.5rem; color: #1e87f0;">menu_book</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="uk-nav-divider"></li>
+                    {% endfor %}
+
+                    {% endfor %}
+
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <h2 class="uk-text-center uk-padding-small uk-margin-remove">{{ data.title }}</h2>
+        <p class="uk-text-center uk-padding-small uk-margin-remove">{{ data.author }} 著</p>
+
+        <div class="uk-padding">
+            {{ content | safe }}
+        </div>
+
+        <div class="uk-padding">
+            <h4 class="uk-heading-line uk-text-center uk-margin-remove">
+                <span>目次</span>
+            </h4>
+            <p class="uk-text-right uk-margin-remove">
+                <span class="uk-text-meta">全 {{ collections_fm | length }} 話</span>
+            </p>
+
+            {% set novel_chapters = collections_fm | sort(false, false, "chapter") %}
+            {% set chapter_list = novel_chapters | groupby("chapter_title") %}
+            {% for chapter_title, chapter in chapter_list %}
+            <h3 class="">{{ chapter_title }}</h3>
+
+            {% set novel_sections = chapter | sort(false, false, 'section') %}
+            {% set section_list = novel_sections | groupby('section_title') %}
+            {% for section_title, section in section_list %}
+            <h3 class="uk-margin-remove">{{ section_title }}</h3>
+            <hr />
+
+            {% set novel_stories = section | sort(false, false, 'story') %}
+            {% for story in novel_stories %}
+            <div class="uk-flex uk-flex-between uk-margin-remove">
+                <a class="uk-link-text" href="{{ story.url | url }}" >{{ story.title }}</a>
+                <span class="uk-text-muted">update: {{ story.others.status.date.modified.toLocaleString() }}</span>
+            </div>
+            <hr />
+            {% endfor %}
+
+            {% endfor %}
+
+            {% endfor %}
+        </div>
+
+        {% from "copyright.njk" import "copyright" %}
+        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=data.author) }}
+
+
+        <div id="navigation-ends-here"></div>
+    </body>
+</html>

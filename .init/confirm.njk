@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="{{ page.lang | default("ja-JP") }}">
+    <head>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>{{ site.title }}</title>
+
+        {% include "uikit.njk" %}
+
+        {% include "fonts_and_icons.njk" %}
+
+        <link rel="stylesheet" href="{{ "/assets/css/main.css" | url }}">
+        <!--<script src="{{ "/assets/js/main.js" | url }}"></script>-->
+        <script src="{{ "/assets/js/confirm.js" | url }}"></script>
+
+    </head>
+    <body class="uk-light uk-background-secondary">
+        <div uk-sticky="end: #navigation-ends-here; show-on-up: true; animation: uk-animation-slide-top; sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky" class="uk-sticky" style="">
+            <nav class="">
+                <div id="navigation-bar" class="uk-container uk-container-expand uk-background-secondary">
+                    <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                        <div class="uk-navbar-left">
+                            <div class="uk-flex uk-flex-column">
+                                <a href="#" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                    home
+                                </a>
+                                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ホーム画面</span>
+                            </div>
+                        </div>
+                        <div class="uk-navbar-right">
+                            <div class="uk-flex uk-flex-column">
+                                <a href="#" id="theme-switcher" data-theme="none" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                    light_mode
+                                </a>
+                                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">テーマ切替</span>
+                            </div>
+
+                            <div class="uk-flex uk-flex-column">
+                                <a href="#" class="uk-icon-link material-symbols-outlined uk-text-cenetr" style="font-size: 2rem;">
+                                    toc
+                                </a>
+                                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">目次</span>
+                            </div>
+                            <!--<a href="#" class="uk-icon-link" uk-icon="icon: list; ratio: 1.5" uk-toggle="target: #offcanvas-slide"></a>-->
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="uk-padding-small">
+            <h3 class="uk-text-center">年齢確認</h3>
+        </div>
+
+        <div class="uk-flex uk-flex-center">
+            <img id="r-18-icon-light" src="{{ "/assets/img/r18-dark.svg" | url }}" alt="" width="40%" hidden>
+            <img id="r-18-icon-dark" src="{{ "/assets/img/r18-light.svg" | url }}" alt="" width="40%" hidden>
+        </div>
+
+        <div class="uk-padding uk-flex uk-flex-center" uk-grid>
+            <div class="uk-width-1-2">
+                <p>このページには 18 歳未満（高校生以下）の方が閲覧するのに不適切なコンテンツが含まれる可能性があります。</p>
+                <p>18 歳未満（高校生以下）の方の閲覧をお断りします。</p>
+                <hr>
+                <p>閲覧者は 18 歳以上ですか？</p>
+            </div>
+        </div>
+
+        <div class="uk-padding uk-flex uk-flex-around" uk-grid>
+            <button id="confirm-button" class="uk-button uk-button-default uk-button-large">
+                <span class="uk-text-success" uk-icon="check"></span>
+                <span>はい、18 歳以上です</span>
+            </button>
+            <button id="reject-button" class="uk-button uk-button-default uk-button-large">
+                <span class="uk-text-danger" uk-icon="close"></span>
+                <span>いいえ、18 歳未満です</span>
+            </button>
+        </div>
+
+        {% from "copyright.njk" import "copyright" %}
+        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=data.author) }}
+
+        <div id="navigation-ends-here"></div>
+    </body>
+</html>

@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="{{ page.lang | default("ja-JP") }}">
+    <head>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>{{ site.title }}</title>
+
+        {% include "uikit.njk" %}
+
+        {% include "fonts_and_icons.njk" %}
+
+        <link rel="stylesheet" href="{{ "/assets/css/main.css" | url }}">
+        <script src="{{ "/assets/js/main.js" | url }}"></script>
+
+
+        {% set exist_r18 = false %}
+        {% for search in collections.abstract %}
+            {% if search.data.r18 %}
+            {% set exist_r18 = true %}
+            {% endif %}
+        {% endfor %}
+
+        {% for search in collections.short %}
+            {% if search.data.r18 %}
+            {% set exist_r18 = true %}
+            {% endif %}
+        {% endfor %}
+
+        {% if exist_r18 %}
+        <script src="{{ "/assets/js/r_18_redirection.js" | url }}"></script>
+        {% else %}
+        <script type="text/javascript">
+            window.addEventListener('load', _ => {
+                document.body.removeAttribute('hidden');
+            });
+        </script>
+        {% endif %}
+
+    </head>
+    <body class="uk-light uk-background-secondary">
+        <div uk-sticky="end: #navigation-ends-here; show-on-up: true; animation: uk-animation-slide-top; sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky" class="uk-sticky" style="">
+            <nav class="">
+                <div id="navigation-bar" class="uk-container uk-container-expand uk-background-secondary">
+                    <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                        <div class="uk-navbar-left">
+                            <div class="uk-flex uk-flex-column">
+                                <a href="#" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                    home
+                                </a>
+                                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ホーム画面</span>
+                            </div>
+                        </div>
+                        <div class="uk-navbar-right">
+                            <div class="uk-flex uk-flex-column">
+                                <a href="#" id="theme-switcher" data-theme="none" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                    light_mode
+                                </a>
+                                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">テーマ切替</span>
+                            </div>
+
+                            <div class="uk-flex uk-flex-column">
+                                <a href="#" class="uk-icon-link material-symbols-outlined uk-text-cenetr" style="font-size: 2rem;">
+                                    toc
+                                </a>
+                                <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">目次</span>
+                            </div>
+                            <!--<a href="#" class="uk-icon-link" uk-icon="icon: list; ratio: 1.5" uk-toggle="target: #offcanvas-slide"></a>-->
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="uk-padding-small">
+            <h2 class="uk-text-center">{{ site.title }}</h2>
+        </div>
+        <div class="uk-padding">
+            <p>今までに書いた小説を集めました。</p>
+            <p>不定期更新です。</p>
+        </div>
+
+        <div class="uk-padding">
+            <h3 class="uk-heading-line uk-text-center"><span>作品集</span></h3>
+        </div>
+
+        <ul class="uk-padding uk-margin-remove" uk-accordion="multiple: true">
+            <li class="uk-open">
+                <a class="uk-accordion-title uk-text-large" href="#">小説</a>
+
+                <ul class="uk-accordion-content" uk-accordion="multiple: true;">
+
+                    {% for collection in collections.abstract %}
+                        {% if collection.data.publish %}
+                        <li>
+                            <a class="uk-accordion-title uk-padding-small" href="#">
+                                {{ collection.data.title }}
+                            </a>
+
+                            <div class="uk-accordion-content uk-margin-remove">
+                                <div class="uk-text-left uk-padding uk-padding-remove-vertical uk-margin-bottom">
+                                    {{ collection.templateContent | safe }}
+                                </div>
+                                <div class="uk-flex uk-flex-center">
+                                    <a class="uk-button uk-button-default" href="{{ collection.url | url }}">
+                                        <span uk-icon="table"></span>
+                                        <span>読む</span>
+                                    </a>
+                                </div>
+
+                            </div>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                </ul>
+                <hr>
+            </li>
+
+            <li class="uk-open">
+                <a class="uk-accordion-title uk-text-large" href="#">短編小説</a>
+
+                <ul class="uk-accordion-content" uk-accordion="multiple: true;">
+
+                    {% for short in collections.short %}
+                    {% set main = files.parse(short.inputPath) %}
+                        {% if main.data.publish %}
+                        <li>
+
+                            <a class="uk-accordion-title uk-padding-small" href="#">
+                                {{ main.data.title }}
+                            </a>
+
+                            <div class="uk-accordion-content uk-margin-remove">
+                                {% set short_abstract = path.join(['src', 'short_abstract', path.parse(short.inputPath).base]) %}
+                                <div class="uk-text-left uk-padding uk-padding-remove-vertical uk-margin-bottom">
+                                    {% renderFile short_abstract %}
+                                </div>
+                                <div class="uk-flex uk-flex-center">
+                                    <a class="uk-button uk-button-default" href="{{ short.url | url }}">
+                                        <span uk-icon="table"></span>
+                                        <span>読む</span>
+                                    </a>
+                                </div>
+
+                            </div>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                </ul>
+                <hr>
+            </li>
+        </ul>
+
+        <div class="uk-padding uk-margin-top">
+            <h3 class="uk-heading-line uk-text-center"><span>リンク</span></h3>
+        </div>
+
+        {% for link in site.links %}
+        <div class="uk-padding">
+            <h4>{{ link.name }}</h4>
+            <a href="{{ link.url }}" class="uk-link-muted">{{ link.url }}</a>
+        </div>
+        {% endfor %}
+
+        {% from "copyright.njk" import "copyright" %}
+        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=site.author) }}
+
+        <div id="navigation-ends-here"></div>
+    </body>
+</html>

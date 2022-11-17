@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+<html lang="ja-JP">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>sort test</title>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+
+        <!-- UIkit CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/css/uikit.min.css" />
+
+        <!-- UIkit JS -->
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
+
+        <script type="text/javascript">
+            function start() {
+                let initial_notification = [
+                    '<ul class="uk-list uk-list-decimal">',
+                    '<li>',
+                    '作品 ID/chapter/section/story を選ぶ',
+                    '</li>',
+                    '<li>',
+                    '右上のアイコンから 変更/追加/削除 等を選ぶ',
+                    '</li>',
+                    '</ul>'
+                ].join('\n');
+                UIkit.notification({
+                        message: initial_notification,
+                        pos: 'bottom-right',
+                        timeout: 0
+                });
+
+
+                const addButton = document.querySelector('#add');
+                const removeButton = document.querySelector('#remove');
+                const renameButton = document.querySelector('#rename');
+                const editButton = document.querySelector('#edit');
+
+                const changeIDButton = document.querySelector('#change-id');
+
+                editButton.addEventListener('click', _ => {
+                    console.log(location.origin + '/edit/' + document.body.dataset.path.slice(4));
+                })
+
+                document.addEventListener('click', _ => {
+                    console.log(document.body.dataset.mode);
+                    if (document.body.dataset.mode == 'collection') {
+                        addButton.parentNode.setAttribute('hidden', 'true');
+                        renameButton.parentNode.setAttribute('hidden', 'true');
+                    } else {
+                        addButton.parentNode.removeAttribute('hidden', 'true');
+                        renameButton.parentNode.removeAttribute('hidden', 'true');
+                    }
+
+                    if (document.body.dataset.mode == 'collection' || document.body.dataset.mode == 'story') {
+                        editButton.parentNode.removeAttribute('hidden', 'true');
+                    } else {
+                        editButton.parentNode.setAttribute('hidden', 'true');
+                    }
+                });
+
+                changeIDButton.addEventListener('click', (e) => {
+                    UIkit.modal.prompt(
+                        '小説 ID の変更：',
+                        e.target.dataset.id
+                    )
+                    .then((data) => {
+                        if (data) {
+                            fetch('/config/change-id/' + location.search, {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    new_id: data
+                                }),
+                            })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.redirection) {
+                                    location.href = location.origin + '/config/add/?id=' + data.new_id;
+                                } else {
+                                    throw new Error('Error!')
+                                }
+                            })
+                            .catch((error) => {
+                                console.error(error);
+                            });
+                        } else {
+                            throw new Error('no data')
+                        }
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+                });
+
+                addButton.addEventListener('click', _ => {
+                    if (document.body.dataset.mode) {
+                        UIkit.modal.prompt(
+                            '新しい ' + document.body.dataset.mode + ' の作成：',
+                            'new-' + document.body.dataset.mode + '-' + Date.now()
+                        )
+                        .then((data) => {
+                            if (data) {
+                                fetch('/config/add/create/' + location.search, {
+                                    method: 'POST', // or 'PUT'
+                                    headers: {
+                                    'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        mode: document.body.dataset.mode,
+                                        path: document.body.dataset.path,
+                                        title: data
+                                    }),
+                                })
+                                .then((response) => response.json())
+                                .then((data) => {
+                                    if (data.redirection) {
+                                        location.reload()
+                                    } else {
+                                        throw new Error('Error!')
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error(error);
+                                });
+                            } else {
+                                throw new Error('Write title');
+                            }
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                    } else {
+                        console.error('Select a chapter/section/story');
+                    }
+                });
+
+                removeButton.addEventListener('click', _ => {
+                    if (document.body.dataset.path) {
+                        UIkit.modal.confirm(
+                            document.body.dataset.mode + ': ' + document.body.dataset.title + ' を削除しますか？'
+                        )
+                        .then(_ => {
+                            fetch('/config/add/remove/' + location.search, {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    mode: document.body.dataset.mode,
+                                    path: document.body.dataset.path
+                                }),
+                            })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.redirection) {
+                                    location.reload()
+                                } else {
+                                    throw new Error('Error!')
+                                }
+                            })
+                            .catch((error) => {
+                                console.error(error);
+                            });
+                        }, _ => {
+                            console.error('Rejected');
+                        });
+                    } else {
+                        console.error('Select a chapter/section/story');
+                    }
+                });
+
+                renameButton.addEventListener('click', _ => {
+                    if (document.body.dataset.path) {
+                        UIkit.modal.prompt(
+                            document.body.dataset.title + ' の名前を変更しますか？',
+                            document.body.dataset.title
+                        )
+                        .then((data) => {
+                            if (data) {
+                                fetch('/config/add/rename/' + location.search, {
+                                    method: 'POST', // or 'PUT'
+                                    headers: {
+                                    'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        mode: document.body.dataset.mode,
+                                        path: document.body.dataset.path,
+                                        title: data
+                                    }),
+                                })
+                                .then((response) => response.json())
+                                .then((data) => {
+                                    if (data.redirection) {
+                                        location.reload()
+                                    } else {
+                                        throw new Error('Error!')
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error(error);
+                                });
+                            } else {
+                                throw new Error('Write title')
+                            }
+
+                        }, _ => {
+                            console.error('Rejected');
+                        });
+                    } else {
+                        console.error('Select a chapter/section/story');
+                    }
+                });
+
+                function notify() {
+                    let content = [
+                        '<ul class="uk-list uk-list-divider">',
+                            '<li>',
+                                '<span class="material-symbols-outlined uk-text-primary" style="padding-right: 1rem; vertical-align: middle;">',
+                                    'arrow_selector_tool',
+                                '</span>',
+                                '<span style="vertical-align: middle;">' + document.body.dataset.mode + '</span>',
+                            '</li>',
+                            '<li>',
+                                '<span class="material-symbols-outlined uk-text-primary" style="padding-right: 1rem; vertical-align: middle;">',
+                                    'bookmarks',
+                                '</span>',
+                                '<span class="" style="vertical-align: middle;">' + document.body.dataset.title + '</span>',
+                            '</li>',
+                        '</ul>'
+                    ].join('\n');
+                    UIkit.notification.closeAll();
+                    UIkit.notification({
+                            message: content,
+                            pos: 'bottom-right',
+                            timeout: 0
+                    });
+                }
+
+                for (let collection of document.querySelectorAll('a.select-collection')) {
+                    collection.addEventListener('click', (e) => {
+                        document.body.dataset.mode = 'collection';
+                        document.body.dataset.path = e.target.dataset.path;
+                        document.body.dataset.title = e.target.dataset.title;
+                        notify();
+                    })
+                }
+
+                for (let chapter of document.querySelectorAll('.chapters')) {
+                    chapter.querySelector('a.select-chapter').addEventListener('click', (e) => {
+                        document.body.dataset.mode = 'chapter';
+                        document.body.dataset.path = e.target.dataset.path;
+                        document.body.dataset.title = e.target.dataset.title;
+                        notify();
+                    });
+
+                    for (let section of chapter.querySelectorAll('.sections')) {
+                        section.querySelector('a.select-section').addEventListener('click', (e) => {
+                            document.body.dataset.mode = 'section';
+                            document.body.dataset.path = e.target.dataset.path;
+                            document.body.dataset.title = e.target.dataset.title;
+                            notify();
+                        });
+
+                        for (let story of section.querySelectorAll('.stories')) {
+                            story.querySelector('a.select-story').addEventListener('click', (e) => {
+                                document.body.dataset.mode = 'story';
+                                document.body.dataset.path = e.target.dataset.path;
+                                document.body.dataset.title = e.target.dataset.title;
+                                notify();
+                            });
+                        }
+                    }
+                }
+
+            }
+            document.addEventListener('DOMContentLoaded', start);
+        </script>
+    </head>
+    <body data-mode="" data-path="" data-title="">
+        <nav id="navigation-bar" class="uk-background-muted">
+            <div class="uk-container uk-container-expand">
+                <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                    <div class="uk-navbar-left">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/config" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                home
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ホーム</span>
+                        </div>
+                        <a href="#" id="change-id" class="uk-text-meta" data-id="{{ id }}">
+                            ID: {{ id }}
+                        </a>
+                    </div>
+                    <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="edit" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                edit_note
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">編集</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="rename" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                format_color_text
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">変更</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="add" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                add
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">追加</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="remove" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                delete
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">削除</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+
+        <div class="uk-flex uk-flex-left">
+            <div class="uk-padding uk-width-2-3">
+                <h2>
+                    <span class="material-symbols-outlined" style="padding-right: 1rem; vertical-align: middle;">
+                        book
+                    </span>
+                    <a href="#" class="select-collection uk-link-heading" data-title="{{ collection.title }}" style="vertical-align: middle;" data-path="src/abstract/{{ id }}.md">
+                        {{ collection.title }}
+                    </a>
+                </h2>
+                <ul class="uk-list uk-list-large uk-list-striped">
+                    {% for chapter in chapters %}
+                    <li class="chapters">
+                        <span class="material-symbols-outlined" style="padding-right: 1rem; vertical-align: middle;">
+                            menu_book
+                        </span>
+                        <a href="#" class="select-chapter uk-link-text" data-path="{{ chapter.path }}" data-title="{{ chapter.chapter_title }}" style="vertical-align: middle;">
+                            {{ chapter.chapter_title }}
+                        </a>
+                        <ul class="uk-list uk-list-large uk-list-divider">
+                            {% for section in chapter.child %}
+                            <li class="sections">
+                                <span class="material-symbols-outlined"
+                                style="padding-left: 2rem; padding-right: 1rem; vertical-align: middle;">
+                                    description
+                                </span>
+                                <a href="#" class="select-section uk-link-text" data-path="{{ section.path }}" data-title="{{ section.section_title }}" style="vertical-align: middle;">
+                                    {{ section.section_title }}
+                                </a>
+                                <ul class="uk-list">
+                                    {% for story in section.child %}
+                                    <li class="stories">
+                                        <span class="material-symbols-outlined"
+                                              style="padding-left: 4rem; padding-right: 1rem; vertical-align: middle;">
+                                            subject
+                                        </span>
+                                        <a href="#" class="select-story uk-link-text" data-path="{{ story.path }}" data-title="{{ story.attributes.title }}" style="vertical-align: middle;">
+                                            {{ story.attributes.title }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+            </div>
+        </div>
+    </body>
+</html>

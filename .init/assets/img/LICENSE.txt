@@ -1,0 +1,13 @@
+このフォルダの中の以下のファイル
+
+・r18-dark.svg
+・r18-light.svg
+
+は，CC0 により提供されています．
+
+CC0 パブリックライセンスについては
+
+・https://creativecommons.org/publicdomain/zero/1.0/deed.ja
+・https://creativecommons.org/publicdomain/zero/1.0/legalcode.ja
+
+を確認してください．

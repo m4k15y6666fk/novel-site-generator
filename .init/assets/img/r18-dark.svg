@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="720"
+   height="720"
+   viewBox="0 0 720 720"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.1 (9c6d41e4, 2022-07-14)"
+   sodipodi:docname="r18-dark.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title253">R18 icon (for dark theme)</title>
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#cccccc"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="false"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showgrid="false"
+     inkscape:zoom="0.47524431"
+     inkscape:cx="551.2954"
+     inkscape:cy="398.74228"
+     inkscape:window-width="1440"
+     inkscape:window-height="847"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer2">
+    <sodipodi:guide
+       position="0,720"
+       orientation="360,0"
+       id="guide113"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="0,360"
+       orientation="0,360"
+       id="guide115"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="360,360"
+       orientation="-360,0"
+       id="guide117"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="360,720"
+       orientation="0,-360"
+       id="guide119"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2">
+    <rect
+       x="-381.35593"
+       y="503.38983"
+       width="579.66102"
+       height="344.74576"
+       id="rect1085" />
+    <rect
+       x="-726.10169"
+       y="588.81356"
+       width="521.69492"
+       height="231.86441"
+       id="rect1079" />
+    <linearGradient
+       id="linearGradient965"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#080808;stop-opacity:1;"
+         offset="0"
+         id="stop963" />
+    </linearGradient>
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="Layer 3">
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:220.759;stroke-dasharray:none;stroke-opacity:1"
+       id="path958"
+       cx="360"
+       cy="360"
+       r="360" />
+  </g>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g860"
+       transform="matrix(0.88931896,0,0,0.88931896,39.845174,36.775481)"
+       style="stroke:#ff3232;stroke-opacity:1">
+      <circle
+         style="fill:none;stroke:#ff3232;stroke-width:95.8374;stroke-dasharray:none;stroke-opacity:1"
+         id="path173"
+         inkscape:label="path173"
+         r="312.08133"
+         cy="360"
+         cx="360" />
+      <path
+         style="fill:none;stroke:#ff3232;stroke-width:100;stroke-dasharray:none;stroke-opacity:1"
+         d="m 121.97525,127.82648 476.0495,471.25051 v 0 0"
+         id="path1023" />
+    </g>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:381.301px;font-family:'Hiragino Kaku Gothic ProN';-inkscape-font-specification:'Hiragino Kaku Gothic ProN, Semi-Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:18.3722;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       x="102.6993"
+       y="474.83679"
+       id="text1201"
+       transform="scale(0.91015173,1.0987179)"
+       inkscape:label="text1201"><tspan
+         sodipodi:role="line"
+         id="tspan879"
+         x="102.6993"
+         y="474.83679"
+         style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:18.3722;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">18</tspan></text>
+  </g>
+  <metadata
+     id="metadata249">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>R18 icon (for dark theme)</dc:title>
+        <dc:date>2022-10-31</dc:date>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>M4K-15Y-6666-FK</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <cc:license
+           rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>

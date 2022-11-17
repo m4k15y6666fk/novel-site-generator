@@ -1,0 +1,241 @@
+
+<!DOCTYPE html>
+<html lang="ja-JP">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>sort test</title>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+
+        <!-- UIkit CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/css/uikit.min.css" />
+
+        <!-- UIkit JS -->
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
+
+        <script type="text/javascript">
+            function start() {
+                const addButton = document.querySelector('#add');
+                const cleanButton = document.querySelector('#clean-all');
+                const changeShortIDButtons = document.querySelectorAll('.change-short-id');
+
+                addButton.addEventListener('click', (e) => {
+                    let mode = document.querySelector('#mode-selector > li.uk-active').dataset.mode;
+
+                    let content;
+                    if (mode == 'long') {
+                        content = '小説'
+                    } else {
+                        content = '短編小説'
+                    }
+
+                    UIkit.modal.prompt(
+                        '新しい ' + content + ' の ID :',
+                        'new-novel-' + Date.now()
+                    )
+                    .then((id) => {
+                        if (!id || id.length == 0) {
+                            throw new Error('Write new ID');
+                        }
+
+                        fetch('/config/new/', {
+                            method: 'POST', // or 'PUT'
+                            headers: {
+                            'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                mode: mode,
+                                new_id: id
+                            }),
+                        })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.redirection) {
+                                location.reload();
+                            } else {
+                                throw new Error('Error!')
+                            }
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+                });
+
+                for (let button of changeShortIDButtons) {
+                    button.addEventListener('click', (e) => {
+                        UIkit.modal.prompt(
+                            '短編小説 の ID を変更：',
+                            e.target.dataset.id
+                        )
+                        .then((data) => {
+                            fetch('/config/short/change-id/', {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    id: {
+                                        old: e.target.dataset.id,
+                                        new: data
+                                    }
+                                }),
+                            })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.redirection) {
+                                    location.reload();
+                                } else {
+                                    throw new Error('Error!')
+                                }
+                            })
+                            .catch((error) => {
+                                console.error(error);
+                            });
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                    });
+                }
+
+                cleanButton.addEventListener('click', (e) => {
+                    UIkit.modal.confirm(
+                        'すべてのキャッシュを削除しますか？'
+                    )
+                    .then(_ => {
+                        fetch('/config/clean-all', {
+                            method: 'POST', // or 'PUT'
+                            headers: {
+                            'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                clean: true
+                            }),
+                        })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.redirection) {
+                                location.reload();
+                            } else {
+                                throw new Error('Error!')
+                            }
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                    }, _ => {
+                        throw new Error('not confirm');
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+                });
+            }
+            document.addEventListener('DOMContentLoaded', start);
+        </script>
+
+    </head>
+    <body>
+        <nav id="navigation-bar" class="uk-background-muted">
+            <div class="uk-container uk-container-expand">
+                <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                    <div class="uk-navbar-left">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/init/?select=true" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                storage
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">リポジトリ</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/config/render/" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                download
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">レンダリング</span>
+                        </div>
+                    </div>
+                    <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="add" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                add
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">追加</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="clean-all" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                cleaning_services
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">キャッシュ削除</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="uk-padding uk-padding-remove-bottom">
+            <span class="uk-text-meta">repo: {{ repo }}</span>
+        </div>
+        <div class="uk-padding">
+            <ul id="mode-selector" class="uk-child-width-expand" uk-tab>
+                <li data-mode="long" class="uk-active"><a href="#">小説</a></li>
+                <li data-mode="short"><a href="#">短編小説</a></li>
+            </ul>
+            <ul class="uk-switcher">
+                <li>
+                    <table class="uk-table uk-table-middle uk-table-striped">
+                        <caption></caption>
+                        <thead>
+                            <tr>
+                                <th>タイトル</th>
+                                <th>ID</th>
+                                <th>追加・削除</th>
+                                <th>ソート</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in collections %}
+                            <tr>
+                                <td>{{ item.data.attributes.title }}</td>
+                                <td>{{ item.id }}</td>
+                                <td><a class="uk-button uk-button-default" href="/config/add/?id={{ item.id }}">追加・削除</a></td>
+                                <td><a class="uk-button uk-button-default" href="/config/sort/?id={{ item.id }}">ソート</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </li>
+                <li>
+                    <table class="uk-table uk-table-middle uk-table-striped">
+                        <caption></caption>
+                        <thead>
+                            <tr>
+                                <th>タイトル</th>
+                                <th>ID</th>
+                                <th>編集</th>
+                                <th>あらすじ</th>
+                                <th>ID 変更</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in shorts %}
+                            <tr>
+                                <td>{{ item.data.attributes.title }}</td>
+                                <td>{{ item.id }}</td>
+                                <td><a class="uk-button uk-button-default" href="/edit/{{ item.path.main }}">編集</a></td>
+                                <td><a class="uk-button uk-button-default" href="/edit/{{ item.path.abstract }}">あらすじ</a></td>
+                                <td><a class="uk-button uk-button-default change-short-id" data-id="{{ item.id }}" href="#">変更</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </li>
+            </ul>
+        </div>
+
+    </body>
+</html>
