@@ -1,14 +1,7 @@
 
-console.log('[' + __filename + '] current working directory: ' + process.cwd());
-if (process.cwd() != __dirname) {
-    console.log('[' + __filename + '] change cwd to: ' + __dirname);
-    process.chdir(__dirname);
-}
-
 console.log('[' + __filename + '] Node.js version: ' + process.version);
 
 /* モジュール */
-// アプリケーションの寿命の制御と、ネイティブなブラウザウインドウを作成するモジュール
 const electron = require('electron');
 const fs = require('fs-extra');
 const path = require('path');
@@ -47,6 +40,12 @@ app.get('/init/', async (req, res) => {
         xdg_data_home = process.env.XDG_DATA_HOME;
     }
 
+    let xdg_config_home = path.join(process.env.HOME, '.config');
+    if (process.env.hasOwnProperty('XDG_CONFIG_HOME') && process.env.XDG_CONFIG_HOME.length > 0) {
+        console.log('Exist XDG_CONFIG_HOME env');
+        xdg_config_home = process.env.XDG_CONFIG_HOME;
+    }
+
     if (req.query.hasOwnProperty('select') && req.query.select.length > 0) {
 
         let repos = [];
@@ -65,6 +64,30 @@ app.get('/init/', async (req, res) => {
             }
         }
 
+        if (repos.length === 0) {
+            console.log('No repositories');
+            let conf_home = path.join(xdg_config_home, 'novel-site-generator');
+            if (!fs.existsSync(conf_home)) {
+                console.log('Create: ' + conf_home);
+                fs.mkdirsSync(conf_home);
+            }
+
+            let conf_file = path.join(conf_home, 'config.json');
+            if (!fs.existsSync(conf_file)) {
+                console.log('Create: ' + conf_file);
+                let default_user = path.parse(process.env.HOME).base;
+                let content = [
+                    '{',
+                    '    "user": {',
+                    '        "name": "' + default_user + '",',
+                    '        "email": "' + default_user + '@example.com"',
+                    '    }',
+                    '}',
+                ].join('\n');
+                fs.writeFileSync(conf_file, content);
+            }
+        }
+
         let html = njk.render('.template/init/index.njk', { repos: repos, home: repo_home });
         res.type('.html');
         res.send(html);
@@ -79,13 +102,43 @@ app.get('/init/', async (req, res) => {
             fs.copySync(path.join(__dirname, '.init'), global.source);
 
             let date = new Date();
-            await git.init(global.source)
+            let novel_config;
+            try {
+                novel_config = fs.readJsonSync(path.join(xdg_config_home, 'novel-site-generator', 'config.json'));
+            } catch (__) {
+                console.error('File does not exist: ' + path.join(xdg_config_home, 'novel-site-generator', 'config.json'));
+                novel_config = {};
+            }
+
+            await git.init(global.source);
+            if (novel_config.hasOwnProperty('user')) {
+                if (novel_config.user.hasOwnProperty('name') && novel_config.user.name.length > 0) {
+                    await git.config(global.source, 'user.name', novel_config.user.name);
+                }
+                if (novel_config.user.hasOwnProperty('email') && novel_config.user.email.length > 0) {
+                    await git.config(global.source, 'user.email', novel_config.user.email);
+                }
+            }
             await git.add(global.source);
             await git.commit(
                 global.source,
-                date.toLocaleString() + ' # ' +
-                'Created: ' + global.source
+                date.toLocaleString() + ' # ' + 'Created: ' + global.source
             );
+        }
+
+        let site_config;
+        try {
+            site_config = fs.readJsonSync(path.join(global.source, '_data', 'site.json'));
+        } catch (__) {
+            console.error('File does not exist: ' + path.join(global.source, '_data', 'site.json'));
+            site_config = {};
+        }
+
+        if (site_config.hasOwnProperty('author') && site_config.author.length > 0) {
+            await git.config(global.source, 'user.name', site_config.author);
+        }
+        if (site_config.hasOwnProperty('email') && site_config.email.length > 0) {
+            await git.config(global.source, 'user.email', site_config.email);
         }
 
         res.type('.html');
@@ -128,7 +181,7 @@ app.use('/config/sort/save/', express.json());
 app.post('/config/sort/save/', source_is_set, async (req, res) => {
     console.log('POST: ' + req.query.id);
 
-    let archive_home = path.join(path.parse(path.parse(global.source).dir).dir, '.archive');
+    let archive_home = path.join(path.parse(path.parse(global.source).dir).dir, 'archive');
     if (!fs.existsSync(archive_home) || !fs.statSync(archive_home).isDirectory()) {
         fs.mkdirsSync(archive_home);
     }
@@ -263,13 +316,13 @@ app.post('/config/add/remove/', source_is_set, async (req, res) => {
     let removed = req.body.path;
 
 
-    if (!fs.existsSync('.archive') || !fs.statSync('.archive').isDirectory()) {
-        fs.mkdirSync('.archive');
+    if (!fs.existsSync('archive') || !fs.statSync('archive').isDirectory()) {
+        fs.mkdirSync('archive');
     }
 
     let date = new Date();
     let archive_dir = path.join(
-        '.archive',
+        'archive',
         'archive-' + date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + '-' + gen_random(6)
     )
     fs.mkdirSync(archive_dir);
@@ -609,7 +662,7 @@ app.post('/config/short/change-id/', source_is_set, async (req, res) => {
 
 app.use('/config/clean-all/', express.json());
 app.post('/config/clean-all/', source_is_set, (req, res) => {
-    let archive_home = path.join(path.parse(path.parse(global.source).dir).dir, '.archive')
+    let archive_home = path.join(path.parse(path.parse(global.source).dir).dir, 'archive')
     if (!fs.existsSync(archive_home) || !fs.statSync(archive_home).isDirectory()) {
         fs.mkdirSync(archive_home);
     }
@@ -683,12 +736,16 @@ app.get('/config/render/', source_is_set, async (req, res) => {
         }
         fs.mkdirsSync(save_path);
 
-        let render_dir = path.join(__dirname, '.render');
-        for (let dir of fs.readdirSync(render_dir)) {
-            fs.removeSync(path.join(render_dir, dir));
+
+        let render = path.join(__dirname, '.render');
+        if (!fs.existsSync(render)) {
+            fs.mkdirsSync(render);
+        }
+        for (let dir of fs.readdirSync(render)) {
+            fs.removeSync(path.join(render, dir));
         }
 
-        let temp_dir = path.join(__dirname, '.render', 'temp-' + gen_random(6));
+        let temp_dir = path.join(__dirname, '.render', 'cache-' + gen_random(6));
         fs.mkdirsSync(temp_dir);
         fs.copySync(global.source, temp_dir);
         let elev = new Eleventy(temp_dir, save_path, {

@@ -69,5 +69,29 @@ module.exports = {
                 });
             });
         });
+    },
+
+    config: function(origin, name, value) {
+        return new Promise((resolve) => {
+            let command = child_process.spawn('git', [
+                '-C', origin, 'config', '--local', name, value
+            ]);
+
+
+            command.stdout.on('data', (data) => {
+                console.log('[git config] ' + data);
+            });
+            command.stderr.on('data', (data) => {
+                console.error('[git config] ' + data);
+            });
+
+            command.on('close', (code) => {
+                console.log('[git config] Result: exited with code:' + code);
+                resolve({
+                    exit: code,
+                    success: code == 0
+                });
+            });
+        });
     }
 }
