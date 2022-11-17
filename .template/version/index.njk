@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="ja-JP">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>sort test</title>
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+
+        <!-- UIkit CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/css/uikit.min.css" />
+
+        <!-- UIkit JS -->
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
+
+        <script type="text/javascript">
+            function start() {
+                console.log('start');
+
+                const hash = document.querySelector('#hash');
+                const revertButton = document.querySelector('#revert');
+                //const links = document.querySelectorAll('.link-hash');
+
+                revertButton.addEventListener('click', _ => {
+                    if (hash.value.length > 0) {
+                        UIkit.modal.confirm(
+                            '小説のバージョンを ' + hash.value + ' の時点まで戻しますか？'
+                        )
+                        .then(_ => {
+                            fetch('/version/revert/', {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    hash: hash.value
+                                }),
+                            })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.reload) {
+                                    location.reload();
+                                } else {
+                                    throw new Error('Error!')
+                                }
+                            })
+                            .catch((error) => {
+                                console.error(error);
+                            });
+                        }, _ => {
+                            throw new Error('not confirm');
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                    } else {
+                        console.error('not selected')
+                    }
+                });
+
+                let n = 1;
+                for (let link of document.querySelectorAll('.link-hash')) {
+                    let index = n;
+
+                    link.addEventListener('click', e => {
+                        hash.options[index].selected = true;
+                    });
+
+                    n++;
+                }
+            }
+            document.addEventListener('DOMContentLoaded', start);
+        </script>
+
+    </head>
+    <body>
+        <nav id="navigation-bar" class="uk-background-muted">
+            <div class="uk-container uk-container-expand">
+                <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                    <div class="uk-navbar-left">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/config/" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                home
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ホーム</span>
+                        </div>
+                    </div>
+                    <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="revert" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                history
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">バージョンを戻す</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+
+        <div class="uk-padding uk-padding-remove-bottom">
+            <form>
+                <select id="hash" class="uk-select uk-width-1-3">
+                    <option value="">コミットハッシュを選択</option>
+                    {% for number in hash %}
+                    <option value="{{ number }}">{{ number }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        <div class="uk-padding" style="max-height: 70vh; overflow: scroll;">
+            <table class="uk-table uk-table-middle uk-table-striped">
+                <caption></caption>
+                <thead>
+                    <tr>
+                        <th>Hash</th>
+                        <th>Comment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <a href="#" class="link-hash uk-text-link" data-hash="{{ log.hash }}">{{ log.hash }}</a>
+                        </td>
+                        <td>{{ log.subject }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </body>
+</html>

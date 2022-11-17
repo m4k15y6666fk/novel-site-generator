@@ -9,6 +9,7 @@ const njk = require('nunjucks');
 const express = require('express');
 const glob = require('glob');
 const os = require('os');
+const hljs = require('highlight.js')
 
 const Eleventy = require("@11ty/eleventy");
 
@@ -763,4 +764,43 @@ app.get('/config/render/', source_is_set, async (req, res) => {
         res.redirect('/config/');
     }
 
+});
+
+
+app.get('/version/', source_is_set, async (req, res) => {
+    let hash = git.sync.logOnlyShortHash(global.source).stdout.toString().split('\n');
+    let log = git.sync.log(global.source).stdout.toString().split('\n');
+
+    let logs = [];
+    for (let line of log) {
+        if (line.indexOf(' ') >= 0) {
+            let splited = line.split(' ');
+            logs.push({
+                hash: splited[0],
+                subject: splited.slice(1).join(' ')
+            });
+        } else {
+            logs.push({
+                hash: line,
+                subject: ''
+            });
+        }
+    }
+
+    let html = njk.render(path.join(__dirname, '.template', 'version', 'index.njk'), {
+        logs: logs,
+        hash: hash
+    })
+    res.type('.html');
+    res.send(html);
+});
+
+
+
+app.use('/version/revert/', express.json());
+app.post('/version/revert/', source_is_set, async (req, res) => {
+    await git.reset(global.source, req.body.hash);
+
+    res.type('.json');
+    res.send({ reload: true });
 });
