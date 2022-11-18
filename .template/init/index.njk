@@ -2,6 +2,9 @@
 <!DOCTYPE html>
 <html lang="ja-JP">
     <head>
+        <meta http-equiv="Content-Security-Policy"
+              content="default-src 'self' https://* 'unsafe-inline';">
+
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="utf-8">
         <title>sort test</title>
@@ -41,15 +44,56 @@
 
     </head>
     <body>
-        <button id="add" type="button" name="button">add</button>
-        <p>{{ home }}</p>
-        <ul>
-            {% for item in repos %}
-            <li>
-                <a href="/init/?repo={{ item.name }}">{{ item.name }}</a>
-            </li>
-            {% endfor %}
-        </ul>
+        <nav id="navigation-bar" class="uk-background-muted version-header">
+            <div class="uk-container uk-container-expand">
+                <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                    <div class="uk-navbar-left">
+                        <span class="material-symbols-outlined" style="vertical-align: middle;">auto_stories</span>
+                        <span class="uk-text-lead" style="vertical-align: middle;">Novel Site Generator</span>
+                    </div>
+                    <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="add" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                create_new_folder
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">追加</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="uk-padding uk-padding-remove-bottom">
+            <dl class="uk-description-list">
+                <dt>
+                    <span class="material-symbols-outlined" style="vertical-align: middle;">folder_open</span>
+                    <span class="" style="vertical-align: middle; padding-left: 1rem;">novel data home</span>
+                </dt>
+                <dd>
+                    <span class="" style="vertical-align: middle; padding-left: 4rem;">{{ repo_home }}</span>
+                </dd>
+                <dt>
+                    <span class="material-symbols-outlined" style="vertical-align: middle;">settings</span>
+                    <span class="" style="vertical-align: middle; padding-left: 1rem;">config home</span>
+                </dt>
+                <dd>
+                    <span class="" style="vertical-align: middle; padding-left: 4rem;">{{ conf_home }}</span>
+                </dd>
+            </dl>
+
+        </div>
+
+        <div class="uk-padding">
+            <ul class="uk-list uk-list-divider" style="padding: 0 5rem;">
+                {% for item in repos %}
+                <li>
+                    <span class="material-symbols-outlined" style="vertical-align: middle;">folder</span>
+                    <a href="/init/?repo={{ item.name }}" class="uk-link-text" style="vertical-align: middle; padding-left: 1rem;">{{ item.name }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
 
     </body>
 </html>

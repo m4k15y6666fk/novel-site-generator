@@ -65,15 +65,16 @@ app.get('/init/', async (req, res) => {
             }
         }
 
+        let conf_home = path.join(xdg_config_home, 'novel-site-generator');
+        let conf_file = path.join(conf_home, 'config.json');
         if (repos.length === 0) {
             console.log('No repositories');
-            let conf_home = path.join(xdg_config_home, 'novel-site-generator');
+
             if (!fs.existsSync(conf_home)) {
                 console.log('Create: ' + conf_home);
                 fs.mkdirsSync(conf_home);
             }
 
-            let conf_file = path.join(conf_home, 'config.json');
             if (!fs.existsSync(conf_file)) {
                 console.log('Create: ' + conf_file);
                 let default_user = path.parse(process.env.HOME).base;
@@ -89,7 +90,11 @@ app.get('/init/', async (req, res) => {
             }
         }
 
-        let html = njk.render('.template/init/index.njk', { repos: repos, home: repo_home });
+        let html = njk.render('.template/init/index.njk', {
+            repos: repos,
+            repo_home: repo_home,
+            conf_home: conf_home
+        });
         res.type('.html');
         res.send(html);
 
@@ -672,48 +677,85 @@ app.post('/config/clean-all/', source_is_set, (req, res) => {
 
 
 
-function createWindow() {
-  // ブラウザウインドウを作成します。
-  const mainWindow = new electron.BrowserWindow({
-      title: "Novel Site Generator"
-  });
+function createWindow(url, maximize) {
+    // ブラウザウインドウを作成します。
+    const mainWindow = new electron.BrowserWindow({
+        width: 800,
+        height: 600,
+        title: "Novel Site Generator"
+    });
 
-  // そしてアプリの index.html を読み込みます。
-  mainWindow.loadURL('http://localhost:8080/init/?select=true');
-  mainWindow.maximize();
 
-  // デベロッパー ツールを開きます。
-  mainWindow.webContents.openDevTools();
+    /*
+    const view_2 = new electron.BrowserView();
+    mainWindow.setBrowserView(view_2);
+    view_2.setBounds({ x: 0, y: 0, width: 400, height: 600 });
+    view_2.setAutoResize({
+        horizontal: true,
+        vertical: true
+    });
+    view_2.webContents.loadURL('https://electronjs.org');
+
+
+    const view = new electron.BrowserView();
+    mainWindow.setBrowserView(view);
+    view.setBounds({ x: 400, y: 0, width: 400, height: 600 });
+    view.setAutoResize({
+        horizontal: true,
+        height: true
+    });
+    view.webContents.loadURL('https://electronjs.org');
+    */
+
+
+    // そしてアプリの index.html を読み込みます。
+    mainWindow.loadURL(url);
+    if (maximize) {
+        mainWindow.maximize();
+    }
+
+
+    // デベロッパー ツールを開きます。
+    mainWindow.webContents.openDevTools({ mode: "right" });
 }
 
 // このメソッドは、Electron の初期化が完了し、
 // ブラウザウインドウの作成準備ができたときに呼ばれます。
 // 一部のAPIはこのイベントが発生した後にのみ利用できます。
-electron.app.whenReady().then(() => {
-  createWindow();
+electron.app.enableSandbox();
 
-  electron.app.on('activate', () => {
-    // macOS では、Dock アイコンのクリック時に他に開いているウインドウがない
-    // 場合、アプリのウインドウを再作成するのが一般的です。
-    if (electron.BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+electron.app.setAboutPanelOptions({
+    applicationName: 'Novel Site Generator',
+    applicationVersion: '0.0.1',
+    copyright: 'copyright (c) 2022 M4K-15Y-6666-FK'
+});
+electron.app.setName('Novel Site Generator');
+
+electron.app.whenReady().then(() => {
+    createWindow('http://localhost:8080/init/?select=true', true);
+
+    electron.app.on('activate', () => {
+        // macOS では、Dock アイコンのクリック時に他に開いているウインドウがない
+        // 場合、アプリのウインドウを再作成するのが一般的です。
+        if (electron.BrowserWindow.getAllWindows().length === 0) {
+            createWindow('http://localhost:8080/init/?select=true', true);
+        }
+    });
 });
 
 // macOS を除き、全ウインドウが閉じられたときに終了します。 ユーザーが
 // Cmd + Q で明示的に終了するまで、アプリケーションとそのメニューバーを
 // アクティブにするのが一般的です。
 electron.app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') electron.app.quit()
+    if (process.platform !== 'darwin') electron.app.quit()
 });
-
-// このファイルでは、アプリ内のとある他のメインプロセスコードを
-// インクルードできます。
-// 別々のファイルに分割してここで require することもできます。
 
 
 app.get('/config/render/', source_is_set, async (req, res) => {
+    //console.log(electron.app.getPath('documents'));
+
     let save_path = electron.dialog.showSaveDialogSync({
-        defaultPath: path.join(process.env.HOME, 'Documents', 'novel-' + gen_random(6)),
+        defaultPath: path.join(electron.app.getPath('documents'), 'novel-' + gen_random(6)),
         properties: [
             'createDirectory'
         ]
@@ -751,11 +793,23 @@ app.get('/config/render/', source_is_set, async (req, res) => {
             fs.outputFileSync(obj.outputPath, obj.content);
         }
 
+        fs.copySync(save_path, path.join(render, 'output'));
+        electron.app.whenReady()
+        .then(_ => {
+            electron.shell.openExternal('http://localhost:11000/', { // async func
+                activate: true
+            });
+        });
+
         res.type('.html');
         res.redirect('/config/');
     }
 
 });
+
+let new_app = express();
+new_app.listen(11000, _ => { console.log('new_app: 11000'); });
+new_app.use('/', express.static(path.join(__dirname, '.render', 'output')));
 
 
 app.get('/version/', source_is_set, async (req, res) => {
