@@ -102,7 +102,6 @@ app.get('/init/', async (req, res) => {
             console.log('Create: ' + global.source);
             fs.copySync(path.join(__dirname, '.init'), global.source);
 
-            let date = new Date();
             let novel_config;
             try {
                 novel_config = fs.readJsonSync(path.join(xdg_config_home, 'novel-site-generator', 'config.json'));
@@ -123,7 +122,7 @@ app.get('/init/', async (req, res) => {
             await git.add(global.source);
             await git.commit(
                 global.source,
-                date.toLocaleString() + ' # ' + 'Created: ' + global.source
+                global.source + ' の作成'
             );
         }
 
@@ -204,9 +203,8 @@ app.post('/config/sort/save/', source_is_set, async (req, res) => {
     command.add = await git.add(path.join(global.source));
     //console.log(command.add);
     command.commit = await git.commit(
-        path.join(global.source),
-        date.toLocaleString() + ' # ' +
-        'Moved: ' + path.join(global.source, req.query.id) +
+        global.source,
+        'ソート: ' + 'ファイル移動: ' + path.join(global.source, req.query.id) +
         ' -> ' + path.join(archive_dir, req.query.id)
 
     );
@@ -272,9 +270,8 @@ app.post('/config/sort/save/', source_is_set, async (req, res) => {
 
         await git.add(path.join(global.source));
         await git.commit(
-            path.join(global.source),
-            date.toLocaleString() + ' # ' +
-            'Updated: ' + path.join(global.source, req.query.id)
+            global.source,
+            'ソート: ' + '書き込み: ' + path.join(global.source, req.query.id)
         );
 
         res.type('.json');
@@ -298,12 +295,11 @@ app.get('/config/add', source_is_set, structure, (req, res) => {
 
 app.use('/config/add/create/', express.json());
 app.post('/config/add/create/', source_is_set, create, async (req, res) => {
-    let date = new Date();
 
     await git.add(path.join(global.source));
     await git.commit(
-        path.join(global.source),
-        date.toLocaleString() + ' # ' + 'Created: ' + res.locals.create
+        global.source,
+        res.locals.create + ' を作成'
     );
 
     res.type('.json');
@@ -316,14 +312,14 @@ app.post('/config/add/remove/', source_is_set, async (req, res) => {
 
     let removed = req.body.path;
 
-
-    if (!fs.existsSync('archive') || !fs.statSync('archive').isDirectory()) {
-        fs.mkdirSync('archive');
+    let archive_home = path.join(path.parse(path.parse(global.source).dir).dir, 'archive')
+    if (!fs.existsSync(archive_home) || !fs.statSync(archive_home).isDirectory()) {
+        fs.mkdirsSync(archive_home);
     }
 
     let date = new Date();
     let archive_dir = path.join(
-        'archive',
+        archive_home,
         'archive-' + date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + '-' + gen_random(6)
     )
     fs.mkdirSync(archive_dir);
@@ -340,8 +336,8 @@ app.post('/config/add/remove/', source_is_set, async (req, res) => {
 
     await git.add(path.join(global.source));
     await git.commit(
-        path.join(global.source),
-        date.toLocaleString() + ' # ' + 'Removed: ' + removed
+        global.source,
+        removed + ' を削除'
     );
 
     res.type('.json');
@@ -352,7 +348,6 @@ app.use('/config/add/rename/', express.json());
 app.post('/config/add/rename/', source_is_set, async (req, res) => {
 
     let renamed = req.body.path;
-    let date = new Date();
 
     if (req.body.mode == 'story') {
         console.log('Rename: ' + renamed);
@@ -368,8 +363,8 @@ app.post('/config/add/rename/', source_is_set, async (req, res) => {
 
     await git.add(path.join(global.source));
     await git.commit(
-        path.join(global.source),
-        date.toLocaleString() + ' # ' + 'Renamed: ' + renamed
+        global.source,
+        renamed + ' のタイトルを変更'
     );
 
     res.type('.json');
@@ -418,12 +413,11 @@ app.post('/config/change-id/', source_is_set, async (req, res) => {
         );
     }
 
-    let date = new Date();
 
     await git.add(path.join(global.source));
     await git.commit(
-        path.join(global.source),
-        date.toLocaleString() + ' # ' + 'Rename ID: ' + req.query.id + ' -> ' + req.body.new_id
+        global.source,
+        '小説 ID の変更: ' + req.query.id + ' -> ' + req.body.new_id
     );
 
     if (!used_id) {
@@ -595,12 +589,11 @@ app.post('/config/new/', source_is_set, async (req, res) => {
 
     }
 
-    let date = new Date();
 
     await git.add(path.join(global.source));
     await git.commit(
-        path.join(global.source),
-        date.toLocaleString() + ' # ' + 'Create: ' + req.body.mode + ' novel ID: ' + req.body.new_id
+        global.source,
+        '作成: ' + req.body.mode + ' 小説 ID: ' + req.body.new_id
     );
 
     if (!used_id) {
@@ -642,12 +635,10 @@ app.post('/config/short/change-id/', source_is_set, async (req, res) => {
     }
 
 
-    let date = new Date();
-
     await git.add(path.join(global.source));
     await git.commit(
-        path.join(global.source),
-        date.toLocaleString() + ' # ' + 'Rename short novel ID: ' + req.body.id.old + ' -> ' + req.body.id.new
+        global.source,
+        '短編小説 ID の変更: ' + req.body.id.old + ' -> ' + req.body.id.new
     );
 
     if (!used_id) {
@@ -665,7 +656,7 @@ app.use('/config/clean-all/', express.json());
 app.post('/config/clean-all/', source_is_set, (req, res) => {
     let archive_home = path.join(path.parse(path.parse(global.source).dir).dir, 'archive')
     if (!fs.existsSync(archive_home) || !fs.statSync(archive_home).isDirectory()) {
-        fs.mkdirSync(archive_home);
+        fs.mkdirsSync(archive_home);
     }
 
     for (let dir of fs.readdirSync(archive_home)) {
@@ -773,15 +764,17 @@ app.get('/version/', source_is_set, async (req, res) => {
 
     let logs = [];
     for (let line of log) {
-        if (line.indexOf(' ') >= 0) {
-            let splited = line.split(' ');
+        if (line.indexOf('|') >= 0) {
+            let splited = line.split('|');
             logs.push({
                 hash: splited[0],
-                subject: splited.slice(1).join(' ')
+                date: splited[1],
+                subject: splited.slice(2).join('|')
             });
         } else {
             logs.push({
                 hash: line,
+                date: '',
                 subject: ''
             });
         }
@@ -789,7 +782,8 @@ app.get('/version/', source_is_set, async (req, res) => {
 
     let html = njk.render(path.join(__dirname, '.template', 'version', 'index.njk'), {
         logs: logs,
-        hash: hash
+        hash: hash,
+        repo: global.source
     })
     res.type('.html');
     res.send(html);
@@ -799,7 +793,11 @@ app.get('/version/', source_is_set, async (req, res) => {
 
 app.use('/version/revert/', express.json());
 app.post('/version/revert/', source_is_set, async (req, res) => {
-    await git.reset(global.source, req.body.hash);
+    await git.revert(global.source, req.body.hash);
+    await git.commit(
+        global.source,
+        req.body.hash + ' の時点まで戻した'
+    );
 
     res.type('.json');
     res.send({ reload: true });

@@ -98,7 +98,7 @@ module.exports = {
     revert: function(origin, hash) {
         return new Promise((resolve) => {
             let command = child_process.spawn('git', [
-                '-C', origin, 'revert', hash, '--no-edit'
+                '-C', origin, 'revert', hash + '..HEAD', '--no-commit'
             ]);
 
 
@@ -170,7 +170,7 @@ module.exports = {
     sync: {
         log: function(origin) {
             return child_process.spawnSync('git', [
-                '-C', origin, 'log', '--oneline'
+                '-C', origin, 'log', '--format=format:%h|%ci|%s'
             ]);
         },
 
