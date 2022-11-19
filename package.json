@@ -9,7 +9,7 @@
   },
   "keywords": [],
   "author": "M4K-15Y-6666-FK",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@11ty/eleventy": "^1.0.2",
     "commander": "^9.4.1",

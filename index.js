@@ -18,6 +18,7 @@ const Eleventy = require("@11ty/eleventy");
 const FrontMatter = require('./script/front-matter.js');
 const git = require('./script/git.js');
 const tree = require('./script/tree.js');
+const find_empty_port = require('./script/port.js');
 
 /* 自作ルーター */
 const structure = require('./script/routes/structure.js');
@@ -26,10 +27,7 @@ const create = require('./script/routes/create.js');
 
 let app = express();
 
-let port = 8080;
-app.listen(port, _ => {
-    console.log('[init] Access: http://localhost:' + port + '/');
-});
+
 
 
 
@@ -760,14 +758,24 @@ electron.app.setAboutPanelOptions({
 });
 electron.app.setName('Novel Site Generator');
 
-electron.app.whenReady().then(() => {
-    createWindow('http://localhost:8080/init/?select=true', true);
+electron.app.whenReady()
+.then(find_empty_port)
+.then(port => {
+    return new Promise((resolve) => {
+        app.listen(port, _ => {
+            console.log('[init] Access: http://localhost:' + port + '/');
+            resolve(port);
+        });
+    });
+})
+.then(port => {
+    createWindow('http://localhost:' + port + '/init/?select=true', true);
 
     electron.app.on('activate', () => {
         // macOS では、Dock アイコンのクリック時に他に開いているウインドウがない
         // 場合、アプリのウインドウを再作成するのが一般的です。
         if (electron.BrowserWindow.getAllWindows().length === 0) {
-            createWindow('http://localhost:8080/init/?select=true', true);
+            createWindow('http://localhost:' + port + '/init/?select=true', true);
         }
     });
 });
@@ -781,7 +789,7 @@ electron.app.on('window-all-closed', () => {
 
 
 
-global.server = express().listen(11000, _ => { console.log('new_app: 11000'); });
+global.server = {};
 
 app.get('/config/render/', source_is_set, async (req, res) => {
     //console.log(electron.app.getPath('documents'));
@@ -859,19 +867,24 @@ app.get('/config/render/', source_is_set, async (req, res) => {
         fs.copySync(save_path, path.join(render, 'output'));
 
 
-        global.server.close();
+        try {
+            global.server.close();
+        } catch(__) {
+            console.log('no server');
+        }
         let new_app = express();
-        global.server = new_app.listen(11000);
+        let new_port = await find_empty_port();
+        global.server = new_app.listen(new_port, _ => {
+            console.log('Access to ' + new_port);
+        });
         new_app.use('/' + site_data.prefix + '/', express.static(path.join(render, 'output')));
 
 
-        electron.app.whenReady()
-        .then(_ => {
-            electron.shell.openExternal(
-                'http://localhost:11000/' + site_data.prefix + '/',
-                { activate: true }
-            );
-        });
+        await electron.app.whenReady();
+        await electron.shell.openExternal(
+            'http://localhost:' + new_port + '/' + site_data.prefix + '/',
+            { activate: true }
+        );
 
         res.type('.html');
         res.redirect('/config/');
@@ -1087,7 +1100,7 @@ function send_top_page(req, res) {
 
 //app.get('/edit', send_top_page);
 //app.get(/\/edit.+/, send_top_page);
-app.get('/edit/*', fix_url, send_top_page);
+app.use('/edit/', fix_url, send_top_page);
 
 let backup = {};
 app.use('/render', express.json());
