@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        {% include ".template/header.html" %}
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+        <!-- UIkit CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/css/uikit.min.css" />
+
+        <!-- UIkit JS -->
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
+
+        <!-- Material Icons -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,500,0,0" />
+
+        <!-- OR ANY OTHER AMD LOADER HERE INSTEAD OF loader.js -->
+        <script src="/modules/monaco-editor/min/vs/loader.js"></script>
+        <script>
+            var editor;
+            var core_editor;
+
+            function editor_init() {
+                const navigationBar = document.querySelector('#navigation-bar');
+                const contentBody = document.querySelector('#content-body');
+
+                contentBody.style.width = document.body.offsetWidth + 'px';
+                contentBody.style.height = (document.body.offsetHeight - navigationBar.offsetHeight) + 'px';
+
+                // Initialize editor
+                require.config({ paths: { vs: '/modules/monaco-editor/min/vs' } });
+                require(['vs/editor/editor.main'], function () {
+                    core_editor = monaco.editor;
+                    editor = core_editor.create(document.getElementById('container'), {
+                        value: `{{ file_content | safe }}`,
+                        language: '{{ editor_lang }}',
+                        minimap: {
+                            enabled: false
+                        },
+                        theme: 'vs-dark',
+                        scrollbar: {
+                            horizontalScrollbarSize: 5,
+                            verticalScrollbarSize: 5,
+                            //verticalSliderSize: 10,
+                        },
+                        wordWrap: 'on'
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', editor_init);
+        </script>
+        <script type="text/javascript" src="/assets/js/main.js"></script>
+        <script type="text/javascript" src="/assets/js/toggle-theme.js"></script>
+        <style type="text/css">
+            body {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body data-analyze="{{- random_id -}}">
+        <!--<div uk-sticky="end: #navigation-ends-here; show-on-up: true; animation: uk-animation-slide-top; sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky" class="uk-sticky" style="">-->
+        <nav id="navigation-bar" class="uk-background-secondary">
+            <div class="uk-container uk-container-expand">
+                <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                    <div class="uk-navbar-left">
+                        <div class="uk-flex uk-flex-column">
+                            {% set previous_url = '/config/' %}
+                            {% if id | length > 0 %}
+                                {% set previous_url = '/config/add/?id=' + id %}
+                            {% endif %}
+                            <a href="{{ previous_url }}" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                undo
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">戻る</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;" uk-toggle="#modal-sections">
+                                info
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">情報</span>
+                        </div>
+                    </div>
+                    <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="theme-switcher" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                light_mode
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">テーマ切替</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="render" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                sync
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">レンダリング</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="button-1" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                save
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">保存</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" class="uk-icon-link material-symbols-outlined uk-text-center" uk-toggle="#modal-overflow" style="font-size: 2rem;">
+                                folder_open
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">開く</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!--</div>-->
+
+        <div id="modal-sections" uk-modal>
+            <div class="uk-modal-dialog">
+                <button class="uk-modal-close-default" type="button" uk-close></button>
+                <div class="uk-modal-header">
+                    <h2 class="uk-modal-title">情報</h2>
+                </div>
+                <div class="uk-modal-body">
+                    {{- information | safe -}}
+                </div>
+                <div class="uk-modal-footer uk-text-right">
+                    <button class="uk-button uk-button-primary uk-modal-close" type="button">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-overflow" uk-modal>
+            <div class="uk-modal-dialog">
+
+                <button class="uk-modal-close-default" type="button" uk-close></button>
+
+                <div class="uk-modal-header">
+                    <h2 class="uk-modal-title">ファイルを開く</h2>
+                </div>
+
+                <div class="uk-modal-body" uk-overflow-auto>
+                    {{- file_tree | safe -}}
+                </div>
+
+                <div class="uk-modal-footer uk-text-right">
+                    <button class="uk-button uk-button-default uk-modal-close" type="button">キャンセル</button>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="content-body" class="uk-flex uk-flex-around">
+            <div id="container" style="width: 50%; height: 100%; border: 0;"></div>
+            <iframe id="final-content" style="width: 50%; height: 100%;"></iframe>
+        </div>
+    </body>
+</html>

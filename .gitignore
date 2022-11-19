@@ -1,3 +1,4 @@
 
+.editor/**
 .render/**
 node_modules/**

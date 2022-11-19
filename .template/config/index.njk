@@ -2,9 +2,7 @@
 <!DOCTYPE html>
 <html lang="ja-JP">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta charset="utf-8">
-        <title>sort test</title>
+        {% include ".template/header.html" %}
 
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
 
@@ -166,6 +164,12 @@
                         </div>
                     </div>
                     <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/edit{{ repo }}/_data/site.json" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                settings
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">設定</span>
+                        </div>
                         <div class="uk-flex uk-flex-column">
                             <a href="#" id="add" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
                                 add

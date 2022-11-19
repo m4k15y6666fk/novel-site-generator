@@ -157,7 +157,8 @@
         {% set page_next = page_present + 1 %}
 
         <div class="uk-padding-small uk-padding-remove-bottom" style="display: flex; justify-content: space-between;">
-            <a href="{{ "/" + collection_id | url }}" class=" uk-text-meta uk-text-left">
+            {% set collection_home_url = "/" + collection_id %}
+            <a href="{{ collection_home_url | url }}" class=" uk-text-meta uk-text-left">
                 {{ collection_data.title }}
             </a>
             <span class="uk-text-meta uk-text-right">

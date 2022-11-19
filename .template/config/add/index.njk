@@ -2,9 +2,7 @@
 <!DOCTYPE html>
 <html lang="ja-JP">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta charset="utf-8">
-        <title>sort test</title>
+        {% include ".template/header.html" %}
 
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
 
@@ -42,7 +40,8 @@
                 const changeIDButton = document.querySelector('#change-id');
 
                 editButton.addEventListener('click', _ => {
-                    console.log(location.origin + '/edit/' + document.body.dataset.path.slice(4));
+                    console.log(location.origin + '/edit' + document.body.dataset.path);
+                    location.href = location.origin + '/edit' + document.body.dataset.path;
                 })
 
                 document.addEventListener('click', _ => {
@@ -158,8 +157,10 @@
                             })
                             .then((response) => response.json())
                             .then((data) => {
-                                if (data.redirection) {
+                                if (data.reload) {
                                     location.reload()
+                                } else if (data.back) {
+                                    location.href = location.origin + '/config/';
                                 } else {
                                     throw new Error('Error!')
                                 }
@@ -334,7 +335,7 @@
                     <span class="material-symbols-outlined" style="padding-right: 1rem; vertical-align: middle;">
                         book
                     </span>
-                    <a href="#" class="select-collection uk-link-heading" data-title="{{ collection.title }}" style="vertical-align: middle;" data-path="src/abstract/{{ id }}.md">
+                    <a href="#" class="select-collection uk-link-heading" data-title="{{ collection.title }}" style="vertical-align: middle;" data-path="{{ abstract }}">
                         {{ collection.title }}
                     </a>
                 </h2>

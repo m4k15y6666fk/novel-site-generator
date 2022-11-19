@@ -1,0 +1,163 @@
+const hljs = require('highlight.js');
+const mdit = require("markdown-it");
+const njk = require("nunjucks");
+const pug = require("pug");
+
+//const { EleventyRenderPlugin } = require("@11ty/eleventy");
+
+module.exports = function(eleventyConfig) {
+  // Nunjucks Filter
+  {% onlynovel %}
+  eleventyConfig.addNunjucksFilter("split", function(arg1, arg2) {
+    return arg1.split(arg2);
+  });
+  {% endonlynovel %}
+
+  {% onlyeditor %}
+  eleventyConfig.addShortcode("ruby", function(arg1, arg2) {
+    return '<ruby>' +
+           arg1 + '<rp>《</rp><rt>' + arg2 + '</rt><rp>》</rp>' +
+           '</ruby>';
+  });
+  {% endonlyeditor %}
+
+  eleventyConfig.addShortcode("brx", function(number) {
+    let result = '';
+
+    let n = 0;
+    while (n < number) {
+      result = result + '<br>';
+      n++;
+    }
+    return result;
+  });
+
+  // Paired Shortcode
+  eleventyConfig.addShortcode("emphasis", function(str) {
+    return '<span style="text-emphasis: sesame #fa3c5a; -webkit-text-emphasis: sesame #fa3c5a;">' +
+           str +
+           '</span>';
+  });
+
+  // Paired Shortcode
+  eleventyConfig.addPairedShortcode("dialogue", function(content) {
+    let result = content.split(/\n/)
+    if (result[0] == '') {
+        result.shift();
+    }
+    if (result[-1] == '') {
+        result.pop();
+    }
+    return '<p style="text-indent: -0.5rem; margin-left: 1rem;">' +
+           result.join('<br>') +
+           '</p>';
+  });
+
+  // Paired Shortcode
+  eleventyConfig.addPairedShortcode("wysiwyg", function(content) {
+    const splited = content.split(/\n/);
+
+    function searchFunc(_, p1, p2) {
+        return p2;
+    }
+
+    let regexp = /^( |　)+(.+)$/
+
+    let result = [];
+    let n = 0;
+    while (n < splited.length) {
+        let splited_now = splited[n];
+        if (regexp.test(splited_now)) {
+            result.push(
+                '<p id="rftgyh" style="text-indent: 1rem;">' +
+                splited_now.replace(regexp, searchFunc) + '<br>' +
+                '</p>'
+            );
+        } else {
+            result.push(
+                '<p style="text-indent: 0rem;">' +
+                splited_now + '<br>' +
+                '</p>'
+            );
+        }
+
+        n++;
+    }
+
+    //let result = content.split(/\n/)
+    return result.join('');
+  });
+
+  // Shortcode
+  //eleventyConfig.addPairedShortcode("highlight", function(content, style) {
+    //const highlightCode = hljs.highlight(content.toString(), {language: style}).value;
+    //return `<pre><code class="hljs language-${style}">${highlightCode}</code></pre>`;
+    //return hljs.highlight('bash', content.toString()).value;
+  //});
+
+  const markdown_it_options = {
+    html: true,
+    breaks: true,
+    linkify: true,
+    highlight: function (str, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return '<pre class="hljs language-' + lang + '"><code>' +
+                   hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                   '</code></pre>';
+          } catch (__) {}
+        }
+
+        const highlight_info = hljs.highlightAuto(str);
+
+        //return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+        return '<pre class="hljs language-' + highlight_info.language + '"><code>' +
+               highlight_info.value +
+               '</code></pre>';
+    }
+  };
+
+  eleventyConfig.setLibrary("md", mdit(markdown_it_options));
+
+  eleventyConfig.addTemplateFormats("njk.js");
+
+  // Creates the extension for use
+  eleventyConfig.addExtension("njk.js", {
+    outputFileExtension: "js", // optional, default: "html"
+
+    // `compile` is called once per .scss file in the input directory
+    compile: async function(inputContent) {
+      let result = njk.compile(inputContent);
+
+      // This is the render function, `data` is the full data cascade
+      return async (data) => {
+        return result.render(data);
+      };
+    }
+  });
+
+  eleventyConfig.addTemplateFormats("njk.pg");
+
+  // Creates the extension for use
+  eleventyConfig.addExtension("njk.pg", {
+    outputFileExtension: "html", // optional, default: "html"
+
+    // `compile` is called once per .scss file in the input directory
+    compile: async function(inputContent) {
+      let result = njk.compile(inputContent);
+
+      // This is the render function, `data` is the full data cascade
+      return async (data) => {
+        let final = result.render(data);
+        return pug.render(final);
+      };
+    }
+  });
+
+  //eleventyConfig.addPlugin(EleventyRenderPlugin);
+
+  return {
+    markdownTemplateEngine: "njk",
+    htmlTemplateEngine: "njk"
+  }
+};

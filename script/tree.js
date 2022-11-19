@@ -1,6 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 
+function excludes(str) {
+    let dirs = [
+        '.git',
+        '_includes',
+        '_layouts',
+        'assets'
+    ];
+
+    let result = [];
+    for (let dir of dirs) {
+        result.push(path.join(str, dir));
+    }
+
+    return result;
+}
+
 let srcdir = [{
     name: 'src',
     path: 'src',
@@ -10,7 +26,11 @@ let srcdir = [{
 
 let html = ['<ul class="uk-nav-default" uk-nav="multiple: true">'];
 let src_include = true;
-function gen_file_tree(array) {
+function gen_file_tree(array, exceptions) {
+    if (!Array.isArray(array) || !Array.isArray(exceptions)) {
+        throw new Error('arguments invalid');
+    }
+
     for (let obj of array) {
         if (fs.existsSync(obj.path) && obj.isDirectory) {
             if (src_include) {
@@ -27,14 +47,14 @@ function gen_file_tree(array) {
             }
 
             for (let list of fs.readdirSync(obj.path)) {
-                if (fs.statSync(path.join(obj.path, list)).isDirectory()) {
+                if (fs.statSync(path.join(obj.path, list)).isDirectory() && !exceptions.includes(path.join(obj.path, list))) {
                     obj.child.push({
                         name: list,
                         path: path.join(obj.path, list),
                         isDirectory: true,
                         child: [],
                     });
-                } else if (list.slice(-3) == '.md') {
+                } else if (list.slice(-3) == '.md' || list == 'site.json') {
                     obj.child.push({
                         name: list,
                         path: path.join(obj.path, list),
@@ -44,10 +64,10 @@ function gen_file_tree(array) {
                 }
             }
             html.push('<ul class="uk-nav-sub" uk-nav="multiple: true">');
-            gen_file_tree(obj.child);
+            gen_file_tree(obj.child, exceptions);
         } else {
             html.push('<li>');
-            html.push('<a href="/edit' + obj.path.slice(3, obj.path.length) + '">' +
+            html.push('<a href="/edit' + obj.path + '">' +
                       '<span uk-icon="icon: file-text; ratio: 1;"></span>' +
                       obj.name + '</a>');
         }
@@ -58,8 +78,8 @@ function gen_file_tree(array) {
 
 module.exports = () => {
     srcdir = [{
-        name: 'src',
-        path: 'src',
+        name: path.parse(global.source).base,
+        path: global.source,
         isDirectory: true,
         child: [],
     }];
@@ -69,7 +89,7 @@ module.exports = () => {
 
     let result;
     try {
-        gen_file_tree(srcdir);
+        gen_file_tree(srcdir, excludes(global.source));
         result = html;
     } catch(e) {
         console.error(e.message);

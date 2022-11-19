@@ -2,10 +2,8 @@ const hljs = require('highlight.js');
 const mdit = require("markdown-it");
 const njk = require("nunjucks");
 const pug = require("pug");
-const fs = require('fs-extra');
 
 const { EleventyRenderPlugin } = require("@11ty/eleventy");
-
 
 module.exports = function(eleventyConfig) {
     // Plugin
@@ -167,7 +165,7 @@ module.exports = function(eleventyConfig) {
             data: "_data",
         },
 
-        //pathPrefix: "",
+        pathPrefix: "/public/",
 
         markdownTemplateEngine: "njk",
         htmlTemplateEngine: "njk"

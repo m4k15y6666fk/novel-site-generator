@@ -9,17 +9,19 @@ const njk = require('nunjucks');
 const express = require('express');
 const glob = require('glob');
 const os = require('os');
-const hljs = require('highlight.js')
+const hljs = require('highlight.js');
+const child_process = require('child_process')
 
 const Eleventy = require("@11ty/eleventy");
 
 /* 自作モジュール */
 const FrontMatter = require('./script/front-matter.js');
 const git = require('./script/git.js');
+const tree = require('./script/tree.js');
 
 /* 自作ルーター */
 const structure = require('./script/routes/structure.js');
-const create = require('./script/routes/create.js')
+const create = require('./script/routes/create.js');
 
 
 let app = express();
@@ -32,6 +34,15 @@ app.listen(port, _ => {
 
 
 global.source = '';
+global.collection = '';
+
+function set_collection_id(req, res, next) {
+    if (req.query.hasOwnProperty('id')) {
+        global.collection = req.query.id;
+    }
+
+    next();
+}
 
 app.get('/init/', async (req, res) => {
 
@@ -286,11 +297,12 @@ app.post('/config/sort/save/', source_is_set, async (req, res) => {
 
 
 
-app.get('/config/add', source_is_set, structure, (req, res) => {
+app.get('/config/add', source_is_set, set_collection_id, structure, (req, res) => {
     let html = njk.render('./.template/config/add/index.njk', {
         chapters: res.locals.chapters,
         id: req.query.id,
         collection: res.locals.collection.data,
+        abstract: res.locals.collection.abstract,
         repo: global.source
     });
     res.type('.html');
@@ -337,6 +349,18 @@ app.post('/config/add/remove/', source_is_set, async (req, res) => {
 
         console.log('Remove: ' + removed);
         fs.moveSync(removed, path.join(archive_dir, path.relative(global.source, removed)));
+    } else if (req.body.mode == 'collection') {
+        removed = [
+            req.body.path,
+            path.join(global.source, path.parse(req.body.path).name)
+        ];
+
+        for (let item of removed) {
+            console.log('Remove: ' + item);
+            fs.moveSync(item, path.join(archive_dir, path.relative(global.source, item)));
+        }
+
+        removed = removed.join(',');
     }
 
     await git.add(path.join(global.source));
@@ -345,8 +369,13 @@ app.post('/config/add/remove/', source_is_set, async (req, res) => {
         removed + ' を削除'
     );
 
-    res.type('.json');
-    res.send({ redirection: true });
+    if (req.body.mode == 'collection') {
+        res.type('.json');
+        res.send({ reload: false, back: true });
+    } else {
+        res.type('.json');
+        res.send({ reload: true, back: false });
+    }
 });
 
 app.use('/config/add/rename/', express.json());
@@ -751,6 +780,9 @@ electron.app.on('window-all-closed', () => {
 });
 
 
+
+global.server = express().listen(11000, _ => { console.log('new_app: 11000'); });
+
 app.get('/config/render/', source_is_set, async (req, res) => {
     //console.log(electron.app.getPath('documents'));
 
@@ -781,24 +813,64 @@ app.get('/config/render/', source_is_set, async (req, res) => {
 
         let temp_dir = path.join(__dirname, '.render', 'cache-' + gen_random(6));
         fs.mkdirsSync(temp_dir);
-        fs.copySync(global.source, temp_dir);
+        for (let dir of fs.readdirSync(global.source)) {
+            if (dir != '.git') {
+                fs.copySync(path.join(global.source, dir), path.join(temp_dir, dir));
+            }
+        }
+
+        /*
         let elev = new Eleventy(temp_dir, save_path, {
             quietMode: true,
             configPath: path.join(__dirname, ".eleventy.js")
         });
 
-        let json = await elev.toJSON();
+
+        */
+
+        let site_data = { prefix: '' };
+        for (let dir of glob.sync(path.join(__dirname, '.render', 'cache-*', '_data', 'site.json'))) {
+            site_data = fs.readJsonSync(dir);
+        }
+        if (site_data.prefix[0] == '/') {
+            site_data.prefix = site_data.prefix.slice(1);
+        }
+        if (site_data.prefix[site_data.prefix.length - 1] == '/') {
+            site_data.prefix = site_data.prefix.slice(0, -1);
+        }
+
+        let elev = child_process.spawnSync(path.join(__dirname, 'node_modules', '.bin', 'eleventy'), [
+            '--input=' + temp_dir,
+            '--output=' + save_path,
+            '--config=' + path.join(__dirname, '.eleventy.js'),
+            '--pathprefix=' + site_data.prefix,
+            '--quiet',
+            '--to=json'
+        ], {
+            cwd: __dirname
+        });
+
+        let json = JSON.parse(elev.stdout.toString());
 
         for (let obj of json) {
             fs.outputFileSync(obj.outputPath, obj.content);
         }
 
         fs.copySync(save_path, path.join(render, 'output'));
+
+
+        global.server.close();
+        let new_app = express();
+        global.server = new_app.listen(11000);
+        new_app.use('/' + site_data.prefix + '/', express.static(path.join(render, 'output')));
+
+
         electron.app.whenReady()
         .then(_ => {
-            electron.shell.openExternal('http://localhost:11000/', { // async func
-                activate: true
-            });
+            electron.shell.openExternal(
+                'http://localhost:11000/' + site_data.prefix + '/',
+                { activate: true }
+            );
         });
 
         res.type('.html');
@@ -806,10 +878,6 @@ app.get('/config/render/', source_is_set, async (req, res) => {
     }
 
 });
-
-let new_app = express();
-new_app.listen(11000, _ => { console.log('new_app: 11000'); });
-new_app.use('/', express.static(path.join(__dirname, '.render', 'output')));
 
 
 app.get('/version/', source_is_set, async (req, res) => {
@@ -855,4 +923,294 @@ app.post('/version/revert/', source_is_set, async (req, res) => {
 
     res.type('.json');
     res.send({ reload: true });
+});
+
+
+
+
+
+
+
+
+let tmpdir = path.join(__dirname, '.editor');
+if (!fs.existsSync(tmpdir)) {
+    fs.mkdirsSync(tmpdir);
+}
+for (let dir of fs.readdirSync(tmpdir)) {
+    fs.removeSync(path.join(tmpdir, dir));
+}
+
+const script_tmp_dir = path.join(tmpdir, 'cache-' + gen_random(6));
+if (!fs.existsSync(script_tmp_dir)) {
+    fs.mkdirsSync(script_tmp_dir);
+}
+console.log('[init editor] Create: ' + script_tmp_dir);
+//for (let file of fs.readdirSync('.tmp')) {
+//    let remove_file = '.tmp/' + file
+//    if (fs.existsSync(remove_file)) {
+//
+//        fsex.removeSync(remove_file);
+//    }
+//}
+//if (!fs.existsSync('.tmp/output')) {
+//    console.log('[init] Create: .tmp/output');
+//    fs.mkdirSync('.tmp/output');
+//}
+
+/* 3. 以後、アプリケーション固有の処理 */
+function allow_access(access, xpath) {
+    let url = access;
+    if (url[0] != '/') {
+        url = '/' + url;
+    }
+    if (url[url.length - 1] == '/') {
+        url = url.slice(0, url.length - 1);
+    }
+
+    let absolute_path = xpath;
+
+    if (absolute_path[absolute_path.length - 1] == '/') {
+        absolute_path = absolute_path.slice(0, absolute_path.length - 1);
+    }
+
+    if (fs.existsSync(absolute_path)) {
+        console.log('[init] Access allowed: ' + absolute_path + ' to ' + url);
+        app.use(url, express.static(absolute_path));
+    } else {
+        console.log('[init] Warning: not exist path: ' + absolute_path);
+    }
+}
+
+allow_access('/modules', path.join(__dirname, 'node_modules'));
+allow_access('/assets', path.join(__dirname, '.template', 'edit', 'assets'));
+
+
+function fix_url(req, res, next) {
+    let url = req.originalUrl;
+    if (url[0] == '/') {
+        url = url.slice(1);
+    }
+    if (url.slice(0,5) == 'save/') {
+        url = url.slice(5, url.length);
+    }
+    if (url.slice(0,5) == 'edit/') {
+        url = url.slice(5, url.length);
+    }
+
+
+    if (url[url.length - 1] == '/' || url.length == 0) {
+        let redirect_path = '/edit/' + url + gen_random(16) + '.md';
+
+        console.log('Redirect to: ' + redirect_path);
+        res.type('.html');
+        res.redirect('/config/');
+    } else if (path.parse(url).base == 'site.json') {
+        res.locals.fixed_url = path.join('/', url);
+        next();
+    } else if (url.slice(url.length - 3, url.length) != '.md') {
+        let redirect_path = '/edit/' + url + '.md';
+
+        console.log('Redirect to: ' + redirect_path);
+        res.type('.html');
+        res.redirect('/config/');
+    } else {
+        res.locals.fixed_url = path.join('/', url);
+        next();
+    }
+}
+
+function send_top_page(req, res) {
+    let file_path = res.locals.fixed_url;
+
+    let file_content;
+    let file_status
+    if (fs.existsSync(file_path) && fs.statSync(file_path).isFile()) {
+        console.log('Open File: ' + file_path);
+        file_content = fs.readFileSync(file_path);
+
+        file_status = fs.statSync(file_path);
+    } else {
+        console.log('Warning: unknown file: ' + file_path);
+        /*
+        file_content = [
+            '---',
+            'title: "ここにタイトルを書く"',
+            '---',
+            '',
+            'ここに本文を書く。'
+        ].join("\n");
+
+        let date = new Date();
+        file_status = {
+            mtime: date,
+            birthtime: date
+        }
+        */
+        res.type('.html');
+        res.redirect('/config/');
+    }
+
+    let editor_lang = 'markdown';
+    if (path.parse(file_path).base == 'site.json') {
+        editor_lang = 'json'
+    }
+    let html = njk.render(path.join(__dirname, '.template', 'edit', 'index.njk'), {
+        editor_lang: editor_lang,
+        id: global.collection,
+        file_path: file_path,
+        file_content: file_content.toString(),
+        file_tree: tree(),
+        random_id: gen_random(6),
+        information: [
+            '<dl class="uk-description-list uk-description-list-divider">',
+            '<dt>app working directory</dt>',
+            '<dd>' + __dirname + '</dd>',
+            '<dt>source repository</dt>',
+            '<dd>' + global.source + '</dd>',
+            '<dt>file path</dt>',
+            '<dd>' + file_path + '</dd>',
+            '<dt>date: last modified</dt>',
+            '<dd>' + file_status.mtime.toLocaleString() + '</dd>',
+            '<dt>date: created</dt>',
+            '<dd>' + file_status.birthtime.toLocaleString() + '</dd>',
+            '</dl>',
+        ].join('\n'),
+    });
+    res.type('.html');
+    res.send(html);
+}
+
+//app.post('/', function(req, res) {
+//    console.log('POST!');
+//    res.send('POST is sended.');
+//});
+
+//app.get('/edit', send_top_page);
+//app.get(/\/edit.+/, send_top_page);
+app.get('/edit/*', fix_url, send_top_page);
+
+let backup = {};
+app.use('/render', express.json());
+app.post('/render',  async (req, res) => {
+    //console.log(req.body);
+    let content = req.body.content;
+    let date = Date.now();
+    //console.log('name->' + content);
+
+    let browser_id;
+    if (req.body.id.length > 0) {
+        browser_id = req.body.id;
+    } else {
+        browser_id = "default-id";
+    }
+    console.log('POST from ID: ' + req.body.id);
+
+    //console.log(fs.readdirSync('read'));
+    //console.log(fs.existsSync('read/' + fs.readdirSync('read')[0]));
+    let tmp_dir = path.join(script_tmp_dir, 'input-' + browser_id + '-' + gen_random(6));
+
+    console.log('Create: ' + tmp_dir);
+    for (let dir of fs.readdirSync(global.source)) {
+        if (dir != '.git') {
+            fs.copySync(path.join(global.source, dir), path.join(tmp_dir, dir));
+        }
+    }
+
+    //for (let file of fs.readdirSync(tmp_dir)) {
+    //    let remove_file = p.join(tmp_dir, file)
+    //    if (fs.existsSync(remove_file)) {
+    //        console.log('Remove: ' + remove_file);
+    //        fsex.removeSync(remove_file);
+    //    }
+    //}
+
+    let pathname = req.body.path;
+    //console.log(pathname);
+    if (pathname[0] == '/') {
+        pathname = pathname.slice(1);
+    }
+    if (pathname.slice(0,5) == 'edit/') {
+        pathname = pathname.slice(5);
+    }
+    let input_path = path.join(tmp_dir, path.relative(global.source, '/' + pathname));
+    console.log('Write: ' + input_path);
+    fs.writeFileSync(input_path, content);
+
+    //fs.unlinkSync('tmp/xxx/index.html');
+    //if (!fs.existsSync('.tmp/output')) {
+    //    console.log('Create: .tmp/output');
+    //    fs.mkdirSync('.tmp/output');
+    //}
+    let output_dir = path.join(script_tmp_dir, "output");
+    fs.removeSync(output_dir);
+    fs.mkdirsSync(output_dir);
+    let elev = new Eleventy(tmp_dir, output_dir, {
+        quietMode: true,
+        configPath: path.join(__dirname, ".editor.eleventy.js")
+    });
+
+    let result = {
+        success: true,
+        url: '/'
+    };
+    try {
+        let json = await elev.toJSON();
+
+        for (let obj of json) {
+            fs.outputFileSync(obj.outputPath, obj.content);
+            //console.log(obj.inputPath);
+            //console.log(input_path);
+            if (obj.inputPath == input_path) {
+                result = Object.assign(result, obj);
+                //result.url = '/public' + result.url;
+                backup[browser_id] = obj;
+            }
+        }
+    } catch(error) {
+        console.error(error);
+        if (backup.hasOwnProperty(browser_id) && backup[browser_id].hasOwnProperty("content")) {
+            result = Object.assign(result, backup[browser_id]);
+        } else {
+            result = Object.assign(result, {
+                content: 'NO BACKUPS!'
+            });
+        }
+        result.success = false;
+    }
+
+    res.send(result);
+    //const html = fs.readFileSync('tmp/' + date + '/index.html');
+    //res.send(result);
+});
+
+app.use('/public', express.static(path.join(script_tmp_dir, 'output')));
+
+app.use('/save/', express.text());
+app.use('/save/', fix_url, async (req, res) => {
+    let url = res.locals.fixed_url.split('/');
+    let file_path = path.join(path.sep, ...url);
+
+
+    let result = {
+        success: true,
+        content: file_path
+    };
+    try {
+        fs.outputFileSync(file_path, req.body);
+        console.log('編集: 更新: ' + file_path);
+    } catch(err) {
+        console.error(err);
+
+        result.success = false;
+    }
+
+    await git.add(global.source);
+    await git.commit(
+        global.source,
+        file_path + ' の内容を更新'
+    );
+
+    res.type('.json');
+    res.send(result);
+
 });
