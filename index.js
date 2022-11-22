@@ -853,6 +853,7 @@ app.get('/config/render/', source_is_set, async (req, res) => {
             site_data.prefix = site_data.prefix.slice(0, -1);
         }
 
+        /*
         let elev = child_process.spawnSync(path.join(__dirname, 'node_modules', '.bin', 'eleventy'), [
             '--input=' + temp_dir,
             '--output=' + save_path,
@@ -863,8 +864,18 @@ app.get('/config/render/', source_is_set, async (req, res) => {
         ], {
             cwd: __dirname
         });
+        */
+        const render_11ty = require('./script/eleventy.js');
 
-        let json = JSON.parse(elev.stdout.toString());
+        let elev = await render_11ty({
+            input: temp_dir,
+            output: save_path,
+            config: path.join(__dirname, '.eleventy.js'),
+            prefix: site_data.prefix,
+            cwd: __dirname
+        });
+
+        let json = JSON.parse(elev);
         for (let obj of json) {
             fs.outputFileSync(obj.outputPath, obj.content);
         }

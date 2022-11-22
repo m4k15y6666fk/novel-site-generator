@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "remove": "node remove.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "restore:image": "node ./cli/restore_image.js",
+    "remove": "node ./cli/remove.js",
+    "test": "node ./test.js"
   },
   "keywords": [],
   "author": "M4K-15Y-6666-FK",
