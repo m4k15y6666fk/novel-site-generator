@@ -31,6 +31,12 @@
 
                 const addButton = document.querySelector('#add');
 
+                let version_body_height = document.body.offsetHeight;
+                for (let header of document.querySelectorAll('body > .version-header')) {
+                    version_body_height = version_body_height - header.offsetHeight;
+                }
+                document.querySelector('#version-body').style.height = version_body_height + 'px';
+
                 addButton.addEventListener('click', _ => {
                     fetch('/config/image/upload/', {
                         method: 'POST', // or 'PUT'
@@ -50,10 +56,21 @@
                 for (let copy of document.querySelectorAll('.hash-selector')) {
                     copy.addEventListener('click', (e) => {
                         navigator.clipboard.writeText("\{\{ html.img(\"" + e.target.dataset.hash + "\") | safe \}\}")
-                        .then(
-                            success => console.log('テキストのコピーに成功?'),
-                            error => console.log('テキストのコピーに失敗?')
-                        );
+                        .then((success) => {
+                            UIkit.notification({
+                                message: '<span uk-icon=\'icon: check\'></span> クリップボードにコピーしました',
+                                status: 'success',
+                                pos: 'bottom-right',
+                                timeout: 1000
+                            });
+                        }, (error) => {
+                            UIkit.notification({
+                                message: '<span uk-icon=\'icon: close\'></span> クリップボードへのコピーが失敗しました',
+                                status: 'danger',
+                                pos: 'bottom-right',
+                                timeout: 1000
+                            });
+                        });
                     });
                 }
 
@@ -132,16 +149,16 @@
                 <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
                     <div class="uk-navbar-left">
                         <div class="uk-flex uk-flex-column">
-                            <a href="/config/" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
-                                home
-                            </a>
-                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ホーム</span>
-                        </div>
-                        <div class="uk-flex uk-flex-column">
                             <a href="#modal-info" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;" uk-toggle>
                                 info
                             </a>
                             <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">情報</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/config/image/" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                refresh
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">リロード</span>
                         </div>
                     </div>
                     <div class="uk-navbar-right">
@@ -163,7 +180,17 @@
                     <h2 class="uk-modal-title">情報</h2>
                 </div>
                 <div class="uk-modal-body">
-                    <span>{{ size }} MB</span>
+                    <dl class="uk-description-list">
+                        <dt>
+                            <span href="#" class="material-symbols-outlined" style="padding-right: 1rem; vertical-align: middle;">
+                                database
+                            </span>
+                            <span style="vertical-align: middle;">画像データの容量</span>
+                        </dt>
+                        <dd>
+                            <span style="padding-left: 4rem;">{{ size }} MB</span>
+                        </dd>
+                    </dl>
                 </div>
                 <div class="uk-modal-footer uk-text-right">
                     <button class="uk-button uk-button-primary uk-modal-close" type="button">閉じる</button>
@@ -175,10 +202,6 @@
             <span class="uk-text-meta">repo: {{ repo }}</span>
         </div>
 
-        <div class="uk-padding-small version-header">
-
-        </div>
-
         <div id="version-body" class="uk-padding uk-padding-remove-vertical" style="max-height: 100vh; overflow: scroll;">
             <table class="uk-table uk-table-middle uk-table-striped">
                 <caption></caption>
@@ -187,7 +210,7 @@
                         <th>画像</th>
                         <th>ハッシュ値</th>
                         <th>タイトル</th>
-                        <th>アップロード日時</th>
+                        <th>最終更新日時</th>
                         <th>削除</th>
                     </tr>
                 </thead>

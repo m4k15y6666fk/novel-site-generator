@@ -43,7 +43,7 @@ module.exports = function(eleventyConfig) {
     });
 
     eleventyConfig.addShortcode("emphasis", function(str) {
-        return '<span style="text-emphasis: sesame #fa3c5a; -webkit-text-emphasis: sesame #fa3c5a;">' +
+        return '<span style="text-emphasis: sesame; -webkit-text-emphasis: sesame;">' +
                str +
                '</span>';
     });

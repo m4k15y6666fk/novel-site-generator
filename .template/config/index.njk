@@ -17,7 +17,20 @@
             function start() {
                 const addButton = document.querySelector('#add');
                 const cleanButton = document.querySelector('#clean-all');
+                const imageButton = document.querySelector('#image');
+
                 const changeShortIDButtons = document.querySelectorAll('.change-short-id');
+
+
+                imageButton.addEventListener('click', _ => {
+                    fetch('/new-window/', {
+                        method: 'POST', // or 'PUT'
+                        headers: {
+                            'Content-Type': 'text/plain',
+                        },
+                        body: '/config/image/',
+                    });
+                });
 
                 addButton.addEventListener('click', (e) => {
                     let mode = document.querySelector('#mode-selector > li.uk-active').dataset.mode;
@@ -171,7 +184,7 @@
                             <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">設定</span>
                         </div>
                         <div class="uk-flex uk-flex-column">
-                            <a href="/config/image/" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                            <a href="#" id="image" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
                                 image
                             </a>
                             <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">画像</span>

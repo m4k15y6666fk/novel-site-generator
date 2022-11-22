@@ -704,7 +704,7 @@ app.post('/config/clean-all/', source_is_set, (req, res) => {
 
 
 
-function createWindow(url, maximize) {
+function createWindow(url, maximize, devtools) {
     // ブラウザウインドウを作成します。
     const mainWindow = new electron.BrowserWindow({
         width: 800,
@@ -743,7 +743,11 @@ function createWindow(url, maximize) {
 
 
     // デベロッパー ツールを開きます。
-    mainWindow.webContents.openDevTools({ mode: "right" });
+    if (devtools) {
+        mainWindow.webContents.openDevTools({ mode: "right" });
+    }
+
+    return mainWindow;
 }
 
 // このメソッドは、Electron の初期化が完了し、
@@ -758,9 +762,11 @@ electron.app.setAboutPanelOptions({
 });
 electron.app.setName('Novel Site Generator');
 
+global.initialPort = 8080;
 electron.app.whenReady()
 .then(find_empty_port)
 .then(port => {
+    global.initialPort = port;
     return new Promise((resolve) => {
         app.listen(port, _ => {
             console.log('[init] Access: http://localhost:' + port + '/');
@@ -769,13 +775,13 @@ electron.app.whenReady()
     });
 })
 .then(port => {
-    createWindow('http://localhost:' + port + '/init/?select=true', true);
+    createWindow('http://localhost:' + port + '/init/?select=true', true, true);
 
     electron.app.on('activate', () => {
         // macOS では、Dock アイコンのクリック時に他に開いているウインドウがない
         // 場合、アプリのウインドウを再作成するのが一般的です。
         if (electron.BrowserWindow.getAllWindows().length === 0) {
-            createWindow('http://localhost:' + port + '/init/?select=true', true);
+            createWindow('http://localhost:' + port + '/init/?select=true', true, true);
         }
     });
 });
@@ -1012,7 +1018,7 @@ app.post('/config/image/rename/', source_is_set, async (req, res) => {
 
     json = json.filter((item) => item.hash != req.body.hash);
     json.push(
-        Object.assign(change, { title: req.body.title })
+        Object.assign(change, { title: req.body.title, date: (new Date()).toLocaleString() })
     )
     fs.outputJsonSync(img_file, json);
 
@@ -1363,4 +1369,19 @@ app.use('/save/', fix_url, async (req, res) => {
     res.type('.json');
     res.send(result);
 
+});
+
+global.imageWindow = false;
+app.use('/new-window/', express.text());
+app.post('/new-window/', source_is_set, async (req, res) => {
+    if (!global.imageWindow) {
+        let win = createWindow('http://localhost:' + global.initialPort + req.body, false, true);
+        global.imageWindow = true;
+        win.on('closed', _ => {
+            global.imageWindow = false;
+        });
+    }
+
+    res.type('.json');
+    res.send({ reload: false });
 });
