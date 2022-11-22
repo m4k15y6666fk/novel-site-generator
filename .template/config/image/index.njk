@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+<html lang="ja-JP">
+    <head>
+        {% include ".template/header.html" %}
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Roboto+Mono&display=swap" rel="stylesheet">
+
+        <!-- UIkit CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/css/uikit.min.css" />
+
+        <style type="text/css">
+            body {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+
+
+        <!-- UIkit JS -->
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
+
+        <script type="text/javascript">
+            function start() {
+                console.log('start');
+
+                const addButton = document.querySelector('#add');
+
+                addButton.addEventListener('click', _ => {
+                    fetch('/config/image/upload/', {
+                        method: 'POST', // or 'PUT'
+                        headers: {
+                        'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data.reload) {
+                            location.reload();
+                        }
+                    });
+                });
+
+                for (let copy of document.querySelectorAll('.hash-selector')) {
+                    copy.addEventListener('click', (e) => {
+                        navigator.clipboard.writeText("\{\{ html.img(\"" + e.target.dataset.hash + "\") | safe \}\}")
+                        .then(
+                            success => console.log('テキストのコピーに成功?'),
+                            error => console.log('テキストのコピーに失敗?')
+                        );
+                    });
+                }
+
+                for (let deleteButton of document.querySelectorAll('.delete-button')) {
+                    let el = deleteButton;
+                    el.addEventListener('click', _ => {
+                        UIkit.modal.confirm(
+                            'ハッシュ値：' + el.dataset.hash + ' のデータを削除しますか？'
+                        )
+                        .then(_ => {
+                            fetch('/config/image/remove/', {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    hash: el.dataset.hash
+                                })
+                            })
+                            .then((res) => res.json())
+                            .then((data) => {
+                                if (data.reload) {
+                                    location.reload();
+                                }
+                            });
+                        }, _ => {
+                            location.reload();
+                        });
+                    });
+                }
+
+                for (let renameButton of document.querySelectorAll('.title-selector')) {
+                    let el = renameButton;
+                    el.addEventListener('click', _ => {
+                        UIkit.modal.prompt(
+                            'ハッシュ値：' + el.dataset.hash + ' のデータの新しいタイトル：',
+                            el.textContent
+                        )
+                        .then((data) => {
+                            if (data.length == 0) {
+                                throw new Error('write new title');
+                            }
+
+                            fetch('/config/image/rename/', {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    hash: el.dataset.hash,
+                                    title: data
+                                })
+                            })
+                            .then((res) => res.json())
+                            .then((data) => {
+                                if (data.reload) {
+                                    location.reload();
+                                }
+                            });
+                        }, _ => {
+                            location.reload();
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                    });
+                }
+            }
+            document.addEventListener('DOMContentLoaded', start);
+        </script>
+
+    </head>
+    <body>
+        <nav id="navigation-bar" class="uk-background-muted version-header">
+            <div class="uk-container uk-container-expand">
+                <div uk-navbar="" class="uk-navbar uk-padding-small uk-padding-remove-horizontal">
+                    <div class="uk-navbar-left">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="/config/" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                home
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">ホーム</span>
+                        </div>
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#modal-info" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;" uk-toggle>
+                                info
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">情報</span>
+                        </div>
+                    </div>
+                    <div class="uk-navbar-right">
+                        <div class="uk-flex uk-flex-column">
+                            <a href="#" id="add" class="uk-icon-link material-symbols-outlined uk-text-center" style="font-size: 2rem;">
+                                add
+                            </a>
+                            <span class="uk-text-meta uk-text-center" style="font-size: 0.5rem;">追加</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div id="modal-info" uk-modal>
+            <div class="uk-modal-dialog">
+                <button class="uk-modal-close-default" type="button" uk-close></button>
+                <div class="uk-modal-header">
+                    <h2 class="uk-modal-title">情報</h2>
+                </div>
+                <div class="uk-modal-body">
+                    <span>{{ size }} MB</span>
+                </div>
+                <div class="uk-modal-footer uk-text-right">
+                    <button class="uk-button uk-button-primary uk-modal-close" type="button">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="uk-padding version-header">
+            <span class="uk-text-meta">repo: {{ repo }}</span>
+        </div>
+
+        <div class="uk-padding-small version-header">
+
+        </div>
+
+        <div id="version-body" class="uk-padding uk-padding-remove-vertical" style="max-height: 100vh; overflow: scroll;">
+            <table class="uk-table uk-table-middle uk-table-striped">
+                <caption></caption>
+                <thead>
+                    <tr>
+                        <th>画像</th>
+                        <th>ハッシュ値</th>
+                        <th>タイトル</th>
+                        <th>アップロード日時</th>
+                        <th>削除</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for img in images | reverse %}
+                    <tr>
+                        <td>
+                            <img src="{{ img.src }}" alt="{{ img.title }}" width="128">
+                        </td>
+                        <td>
+                            <a href="#" class="hash-selector uk-link-text" data-hash="{{ img.hash }}" style="font-family: 'Roboto Mono', monospace;">{{ img.hash }}</a>
+                        </td>
+                        <td>
+                            <a href="#" class="title-selector uk-link-text" data-hash="{{ img.hash }}">{{ img.title }}</a>
+                        </td>
+                        <td>
+                            <span>{{ img.date }}</span>
+                        </td>
+                        <td>
+                            <button class="delete-button uk-button uk-button-default" data-hash="{{ img.hash }}">
+                                <span class="material-symbols-outlined" style="vertical-align: middle;">delete</span>
+                                <span style="vertical-align: middle;">削除</span>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </body>
+</html>

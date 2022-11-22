@@ -5,12 +5,13 @@ const pug = require("pug");
 
 const { EleventyRenderPlugin } = require("@11ty/eleventy");
 
+
 module.exports = function(eleventyConfig) {
     // Plugin
     eleventyConfig.addPlugin(EleventyRenderPlugin);
 
-    // Copy `random-folder/img/` to `_site/subfolder/img`
-    eleventyConfig.addPassthroughCopy({ "src/assets/img/": "assets/img" });
+    // Do not use .gitignore for .eleventyignore
+    eleventyConfig.setUseGitIgnore(false);
 
     // Filter
     eleventyConfig.addNunjucksFilter("split", function(arg1, arg2) {
@@ -153,8 +154,6 @@ module.exports = function(eleventyConfig) {
         }
     });
 
-
-    eleventyConfig.ignores.add("short_abstract/");
 
     return {
         dir: {

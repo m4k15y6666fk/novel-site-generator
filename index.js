@@ -859,9 +859,13 @@ app.get('/config/render/', source_is_set, async (req, res) => {
         });
 
         let json = JSON.parse(elev.stdout.toString());
-
         for (let obj of json) {
             fs.outputFileSync(obj.outputPath, obj.content);
+        }
+
+        let img_dir = path.join(temp_dir, 'assets', 'img');
+        for (let img of glob.sync(path.join(img_dir, '**/*'))) {
+            fs.copySync(img, path.join(save_path, 'assets', 'img', path.relative(img_dir, img)));
         }
 
         fs.copySync(save_path, path.join(render, 'output'));
@@ -877,12 +881,16 @@ app.get('/config/render/', source_is_set, async (req, res) => {
         global.server = new_app.listen(new_port, _ => {
             console.log('Access to ' + new_port);
         });
-        new_app.use('/' + site_data.prefix + '/', express.static(path.join(render, 'output')));
 
+        let access_url = '/' + site_data.prefix + '/';
+        if (site_data.prefix.length == 0) {
+            access_url = '/';
+        }
+        new_app.use(access_url, express.static(path.join(render, 'output')));
 
         await electron.app.whenReady();
         await electron.shell.openExternal(
-            'http://localhost:' + new_port + '/' + site_data.prefix + '/',
+            'http://localhost:' + new_port + access_url,
             { activate: true }
         );
 
@@ -891,6 +899,133 @@ app.get('/config/render/', source_is_set, async (req, res) => {
     }
 
 });
+
+
+const mimetype = require('./script/mimetype.js');
+
+app.get('/config/image/', source_is_set, async (req, res) => {
+
+    let img_file = path.join(global.source, 'assets', 'img', 'upload.json');
+    if (!fs.existsSync(img_file)) {
+        fs.outputJsonSync(img_file, []);
+    }
+
+    let json = fs.readJsonSync(img_file);
+    if (!Array.isArray(json)) {
+        throw new Error('JSON is not Array.');
+    }
+
+    let html = njk.render(path.join(__dirname, '.template', 'config', 'image', 'index.njk'), {
+        images: json,
+        file: img_file,
+        size: (fs.statSync(img_file).size / 1000000).toPrecision(3),
+        repo: global.source
+    })
+    res.type('.html');
+    res.send(html);
+});
+
+app.use('/config/image/upload/', express.json());
+app.post('/config/image/upload/', source_is_set, async (req, res) => {
+
+    let images = electron.dialog.showOpenDialogSync({
+        properties: [
+            'openFile'
+        ]
+    });
+    let img_file = path.join(global.source, 'assets', 'img', 'upload.json');
+    let json = [];
+    if (fs.existsSync(img_file)) {
+        json = fs.readJsonSync(img_file);
+    } else {
+        fs.outputJsonSync(img_file, json);
+    }
+
+    function random_hash() {
+        return ('000000' + Math.floor(Math.random() * ((36 ** 6) - 1)).toString(36)).slice(-6);
+    }
+
+    let hash = random_hash();
+    while (json.find((item) => item.hash == hash)) {
+        hash = random_hash;
+    }
+
+
+    for (let img of images) {
+        let data = mimetype(img);
+        json.push({
+            hash: hash,
+            title: path.parse(img).name,
+            type: data.type,
+            date: (new Date()).toLocaleString(),
+            src: 'data:' + data.type + ';base64,' + data.buffer.toString('base64')
+        });
+
+        break;
+    }
+    fs.outputJsonSync(img_file, json);
+
+    await git.add(path.join(global.source));
+    await git.commit(
+        global.source,
+        '画像データの追加：' + images[0]
+    );
+
+    res.type('.json');
+    res.send({ reload: true });
+});
+
+app.use('/config/image/remove/', express.json());
+app.post('/config/image/remove/', source_is_set, async (req, res) => {
+    let img_file = path.join(global.source, 'assets', 'img', 'upload.json');
+    let json = [];
+    if (fs.existsSync(img_file)) {
+        json = fs.readJsonSync(img_file);
+    } else {
+        fs.outputJsonSync(img_file, json);
+    }
+
+    json = json.filter((item) => item.hash != req.body.hash);
+    fs.outputJsonSync(img_file, json);
+
+    await git.add(path.join(global.source));
+    await git.commit(
+        global.source,
+        '画像データの削除：' + req.body.hash
+    );
+
+    res.type('.json');
+    res.send({ reload: true });
+});
+
+app.use('/config/image/rename/', express.json());
+app.post('/config/image/rename/', source_is_set, async (req, res) => {
+    let img_file = path.join(global.source, 'assets', 'img', 'upload.json');
+    let json = [];
+    if (fs.existsSync(img_file)) {
+        json = fs.readJsonSync(img_file);
+    } else {
+        fs.outputJsonSync(img_file, json);
+    }
+
+    let change = json.find((item) => item.hash == req.body.hash);
+
+    json = json.filter((item) => item.hash != req.body.hash);
+    json.push(
+        Object.assign(change, { title: req.body.title })
+    )
+    fs.outputJsonSync(img_file, json);
+
+    await git.add(path.join(global.source));
+    await git.commit(
+        global.source,
+        '画像データの更新：' + req.body.hash + ': ' + change.title
+    );
+
+    res.type('.json');
+    res.send({ reload: true });
+});
+
 
 
 app.get('/version/', source_is_set, async (req, res) => {
@@ -1011,24 +1146,21 @@ function fix_url(req, res, next) {
     }
 
 
-    if (url[url.length - 1] == '/' || url.length == 0) {
-        let redirect_path = '/edit/' + url + gen_random(16) + '.md';
-
-        console.log('Redirect to: ' + redirect_path);
-        res.type('.html');
-        res.redirect('/config/');
-    } else if (path.parse(url).base == 'site.json') {
-        res.locals.fixed_url = path.join('/', url);
-        next();
-    } else if (url.slice(url.length - 3, url.length) != '.md') {
-        let redirect_path = '/edit/' + url + '.md';
-
-        console.log('Redirect to: ' + redirect_path);
-        res.type('.html');
-        res.redirect('/config/');
+    let file = path.resolve(path.sep, url);
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
+        res.type('.txt');
+        res.send('no data');
     } else {
-        res.locals.fixed_url = path.join('/', url);
-        next();
+        if (path.parse(file).base == 'site.json') {
+            res.locals.fixed_url = file;
+            next();
+        } else if (path.parse(file).ext == '.md') {
+            res.locals.fixed_url = file;
+            next();
+        } else  {
+            res.type('.txt');
+            res.send('cant access');
+        }
     }
 }
 
@@ -1178,6 +1310,11 @@ app.post('/render',  async (req, res) => {
                 //result.url = '/public' + result.url;
                 backup[browser_id] = obj;
             }
+        }
+
+        let img_dir = path.join(tmp_dir, 'assets', 'img');
+        for (let img of glob.sync(path.join(img_dir, '**/*'))) {
+            fs.copySync(img, path.join(output_dir, 'assets', 'img', path.relative(img_dir, img)));
         }
     } catch(error) {
         console.error(error);
