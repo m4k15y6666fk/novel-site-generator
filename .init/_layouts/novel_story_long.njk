@@ -240,6 +240,25 @@
             </div>
         </div>
 
+        {% if collection_data.license %}
+        <div class="uk-padding-large uk-padding-remove-bottom">
+            <div class="uk-flex uk-flex-middle">
+                <div style="min-width: 88px;">
+                    {{ creative_commons.icon(collection_data.license) | safe }}
+                </div>
+                <div style="padding-left: 1rem;">
+                    <span class="uk-text-meta">
+                        この作品は
+                    </span>
+                    {{ creative_commons.text(collection_data.license, { cls: "uk-text-meta" }) | safe }}
+                    <span class="uk-text-meta">
+                        で提供されています。
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% from "copyright.njk" import "copyright" %}
         {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=collection_data.author) }}
 

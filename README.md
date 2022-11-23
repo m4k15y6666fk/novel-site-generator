@@ -5,7 +5,6 @@
 ### 動作環境
 
 macOS 12.4
-（＋ たぶん Linux）
 
 ~~~bash
 git --version

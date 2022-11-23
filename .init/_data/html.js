@@ -3,19 +3,32 @@ const fs = require('fs-extra');
 const path = require('path');
 
 module.exports = {
-    img: (hash, width) => {
-        const json = fs.readJsonSync(path.join(__dirname, '..', 'assets', 'img', 'upload.json'));
-        const size = '';
+    img: (hash, width = 80) => {
+        let json = fs.readJsonSync(path.join(__dirname, '..', 'assets', 'img', 'upload.json'));
+
+        let attributes = [];
+
+        let style = [
+            'display: block;',
+            'margin: auto;',
+            'border-radius: 10px;'
+        ];
         if (width) {
-            size = 'style ="width: ' + parseInt(width) + '%;"';
+            style.push('width: ' + parseInt(width) + '%;');
         }
 
-        let result = '<img src="" alt="">';
+        attributes.push('style="' + style.join(' ') + '"');
+
+
         let data = json.find((item) => item.hash == hash);
         if (data) {
-            result = '<img src="' + data.src + '" alt="' + data.title + '" ' + size + '>';
+            attributes.push('src="' + data.src + '"');
+            attributes.push('alt="' + data.title + '"');
+        } else {
+            attributes.push('src=""');
+            attributes.push('alt=""');
         }
 
-        return result;
+        return '<img ' + attributes.join(' ') + ' >';
     },
 }
