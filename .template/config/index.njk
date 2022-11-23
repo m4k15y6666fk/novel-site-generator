@@ -255,8 +255,8 @@
                             <tr>
                                 <td>{{ item.data.attributes.title }}</td>
                                 <td>{{ item.id }}</td>
-                                <td><a class="uk-button uk-button-default" href="/edit/{{ item.path.main }}">編集</a></td>
-                                <td><a class="uk-button uk-button-default" href="/edit/{{ item.path.abstract }}">あらすじ</a></td>
+                                <td><a class="uk-button uk-button-default" href="/edit{{ item.path.main }}">編集</a></td>
+                                <td><a class="uk-button uk-button-default" href="/edit{{ item.path.abstract }}">あらすじ</a></td>
                                 <td><a class="uk-button uk-button-default change-short-id" data-id="{{ item.id }}" href="#">変更</a></td>
                             </tr>
                             {% endfor %}

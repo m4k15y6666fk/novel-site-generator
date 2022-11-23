@@ -482,8 +482,8 @@ app.get('/config', source_is_set, async (req, res) => {
                 id: path.parse(short).name,
                 data: new FrontMatter(path.join(global.source, 'short', short)),
                 path: {
-                    main: path.join('short', short),
-                    abstract: path.join('short_abstract', short)
+                    main: path.join(global.source, 'short', short),
+                    abstract: path.join(global.source, 'short_abstract', short)
                 }
             });
         }

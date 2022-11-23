@@ -75,8 +75,32 @@
             </div>
         </div>
 
+
+        {% if data.license %}
+        <div class="uk-padding-large uk-padding-remove-bottom">
+            <div class="uk-flex uk-flex-middle">
+                <div style="min-width: 88px;">
+                    {{ creative_commons.icon(data.license) | safe }}
+                </div>
+                <div style="padding-left: 1rem;">
+                    <span class="uk-text-meta">
+                        この作品は
+                    </span>
+                    {{ creative_commons.text(data.license, { cls: "uk-text-meta" }) | safe }}
+                    <span class="uk-text-meta">
+                        で提供されています。
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% set during = site.published %}
+        {% if during != time.year %}
+            {% set during = during + ' - ' + time.year %}
+        {% endif %}
         {% from "copyright.njk" import "copyright" %}
-        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=data.author) }}
+        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year=during, author=data.author) }}
 
         <div id="navigation-ends-here"></div>
     </body>
