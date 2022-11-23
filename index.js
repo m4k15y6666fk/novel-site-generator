@@ -74,35 +74,10 @@ app.get('/init/', async (req, res) => {
             }
         }
 
-        let conf_home = path.join(xdg_config_home, 'novel-site-generator');
-        let conf_file = path.join(conf_home, 'config.json');
-        if (repos.length === 0) {
-            console.log('No repositories');
-
-            if (!fs.existsSync(conf_home)) {
-                console.log('Create: ' + conf_home);
-                fs.mkdirsSync(conf_home);
-            }
-
-            if (!fs.existsSync(conf_file)) {
-                console.log('Create: ' + conf_file);
-                let default_user = path.parse(process.env.HOME).base;
-                let content = [
-                    '{',
-                    '    "user": {',
-                    '        "name": "' + default_user + '",',
-                    '        "email": "' + default_user + '@example.com"',
-                    '    }',
-                    '}',
-                ].join('\n');
-                fs.writeFileSync(conf_file, content);
-            }
-        }
 
         let html = njk.render('.template/init/index.njk', {
             repos: repos,
-            repo_home: repo_home,
-            conf_home: conf_home
+            repo_home: repo_home
         });
         res.type('.html');
         res.send(html);
@@ -116,43 +91,60 @@ app.get('/init/', async (req, res) => {
             console.log('Create: ' + global.source);
             fs.copySync(path.join(__dirname, '.init'), global.source);
 
-            let novel_config;
+
+            let site_conf_file = path.join(global.source, '_data', 'site.json');
+
+            console.log('Create: ' + site_conf_file);
+            let user = path.parse(process.env.HOME).base;
+            let content = njk.render(path.join(__dirname, '.template', 'novel', '_data', 'site.json.njk'), {
+                title: user + ' の小説サイト',
+                user: {
+                    author: user,
+                    email: user + '@example.com'
+                },
+                year: (new Date()).getFullYear()
+            });
+            fs.outputFileSync(site_conf_file, content);
+
+
+            let site_config;
             try {
-                novel_config = fs.readJsonSync(path.join(xdg_config_home, 'novel-site-generator', 'config.json'));
+                site_config = fs.readJsonSync(site_conf_file);
             } catch (__) {
-                console.error('File does not exist: ' + path.join(xdg_config_home, 'novel-site-generator', 'config.json'));
-                novel_config = {};
+                console.error('File does not exist: ' + site_conf_file);
+                site_config = {};
             }
 
+
             await git.init(global.source);
-            if (novel_config.hasOwnProperty('user')) {
-                if (novel_config.user.hasOwnProperty('name') && novel_config.user.name.length > 0) {
-                    await git.config(global.source, 'user.name', novel_config.user.name);
-                }
-                if (novel_config.user.hasOwnProperty('email') && novel_config.user.email.length > 0) {
-                    await git.config(global.source, 'user.email', novel_config.user.email);
-                }
+            if (site_config.hasOwnProperty('author') && site_config.author.length > 0) {
+                await git.config(global.source, 'user.name', site_config.author);
+            }
+            if (site_config.hasOwnProperty('email') && site_config.email.length > 0) {
+                await git.config(global.source, 'user.email', site_config.email);
             }
             await git.add(global.source);
             await git.commit(
                 global.source,
                 global.source + ' の作成'
             );
-        }
+        } else {
 
-        let site_config;
-        try {
-            site_config = fs.readJsonSync(path.join(global.source, '_data', 'site.json'));
-        } catch (__) {
-            console.error('File does not exist: ' + path.join(global.source, '_data', 'site.json'));
-            site_config = {};
-        }
+            let site_config;
+            try {
+                site_config = fs.readJsonSync(path.join(global.source, '_data', 'site.json'));
+            } catch (__) {
+                console.error('File does not exist: ' + path.join(global.source, '_data', 'site.json'));
+                site_config = {};
+            }
 
-        if (site_config.hasOwnProperty('author') && site_config.author.length > 0) {
-            await git.config(global.source, 'user.name', site_config.author);
-        }
-        if (site_config.hasOwnProperty('email') && site_config.email.length > 0) {
-            await git.config(global.source, 'user.email', site_config.email);
+            if (site_config.hasOwnProperty('author') && site_config.author.length > 0) {
+                await git.config(global.source, 'user.name', site_config.author);
+            }
+            if (site_config.hasOwnProperty('email') && site_config.email.length > 0) {
+                await git.config(global.source, 'user.email', site_config.email);
+            }
+
         }
 
         res.type('.html');
@@ -553,6 +545,7 @@ app.post('/config/new/', source_is_set, async (req, res) => {
             'r18: false',
             '',
             'publish: false # 公開時は true',
+            'license: false # BY,BY-SA,BY-NC,BY-ND,BY-NC-SA,BY-NC-ND 等を選択',
             '---',
             '',
             '<!--- ここから本文 --->',
@@ -604,6 +597,7 @@ app.post('/config/new/', source_is_set, async (req, res) => {
             'r18: false',
             '',
             'publish: false # 公開時は true',
+            'license: false # BY,BY-SA,BY-NC,BY-ND,BY-NC-SA,BY-NC-ND 等を選択',
             '---',
             '',
             '<!--- ここから本文 --->',

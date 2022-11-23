@@ -20,7 +20,7 @@
                 addButton.addEventListener('click', (e) => {
                     UIkit.modal.prompt(
                         '新しいリポジトリを作成：',
-                        'repo-' + Date.now()
+                        'repo-' + Date.now().toString(36)
                     )
                     .then((data) => {
                         if (data.length > 0) {
@@ -66,13 +66,6 @@
                 </dt>
                 <dd>
                     <span class="" style="vertical-align: middle; padding-left: 4rem;">{{ repo_home }}</span>
-                </dd>
-                <dt>
-                    <span class="material-symbols-outlined" style="vertical-align: middle;">settings</span>
-                    <span class="" style="vertical-align: middle; padding-left: 1rem;">config home</span>
-                </dt>
-                <dd>
-                    <span class="" style="vertical-align: middle; padding-left: 4rem;">{{ conf_home }}</span>
                 </dd>
             </dl>
 

@@ -259,8 +259,12 @@
         </div>
         {% endif %}
 
+        {% set during = site.published %}
+        {% if during != time.year %}
+            {% set during = during + ' - ' + time.year %}
+        {% endif %}
         {% from "copyright.njk" import "copyright" %}
-        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year="2022", author=collection_data.author) }}
+        {{ copyright(class="uk-text-center uk-text-meta uk-padding-large", year=during, author=collection_data.author) }}
 
         <div id="navigation-ends-here"></div>
     </body>
