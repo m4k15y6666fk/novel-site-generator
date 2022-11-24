@@ -21,6 +21,7 @@
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
 
+        {% include ".template/error.njk" %}
         <script type="text/javascript">
             function start() {
                 console.log('start');
@@ -36,12 +37,16 @@
                 document.querySelector('#version-body').style.height = version_body_height + 'px';
 
                 revertButton.addEventListener('click', _ => {
-                    if (hash.value.length > 0) {
-                        UIkit.modal.confirm(
+                    notify_if_error(async (error) => {
+                        if (!hash.hasOwnProperty('value') || hash.value.length == 0) {
+                            error('ハッシュ値を選んでください');
+                        }
+
+                        await UIkit.modal.confirm(
                             '小説のバージョンを ' + hash.value + ' の時点まで戻しますか？'
                         )
-                        .then(_ => {
-                            fetch('/version/revert/', {
+                        .then(async _ => {
+                            await fetch('/version/revert/', {
                                 method: 'POST', // or 'PUT'
                                 headers: {
                                 'Content-Type': 'application/json',
@@ -55,21 +60,14 @@
                                 if (data.reload) {
                                     location.reload();
                                 } else {
-                                    throw new Error('Error!')
+                                    error('処理が正常に終了しませんでした');
                                 }
-                            })
-                            .catch((error) => {
-                                console.error(error);
                             });
-                        }, _ => {
-                            throw new Error('not confirm');
                         })
-                        .catch((error) => {
-                            console.error(error);
+                        .catch((err) => {
+                            console.error(err);
                         });
-                    } else {
-                        console.error('not selected')
-                    }
+                    });
                 });
 
                 let n = 1;

@@ -13,24 +13,27 @@
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
 
+        {% include ".template/error.njk" %}
         <script type="text/javascript">
             function start() {
                 const addButton = document.querySelector('#add');
 
                 addButton.addEventListener('click', (e) => {
-                    UIkit.modal.prompt(
-                        '新しいリポジトリを作成：',
-                        'repo-' + Date.now().toString(36)
-                    )
-                    .then((data) => {
-                        if (data.length > 0) {
-                            location.href = location.origin + '/init/?repo=' + data;
-                        } else {
-                            throw new Error('write title');
-                        }
-                    })
-                    .catch((error) => {
-                        console.error(error);
+                    notify_if_error(async (error) => {
+                        await UIkit.modal.prompt(
+                            '新しいリポジトリを作成：',
+                            'repo-' + Date.now().toString(36)
+                        )
+                        .then((data) => {
+                            if (data && data.length > 0) {
+                                location.href = location.origin + '/init/?repo=' + data;
+                            } else {
+                                error('タイトルを入力してください');
+                            }
+                        })
+                        .catch((err) => {
+                            console.error(err);
+                        });
                     });
                 })
             }

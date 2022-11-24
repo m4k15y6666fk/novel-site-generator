@@ -13,6 +13,7 @@
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
 
+        {% include ".template/error.njk" %}
         <script type="text/javascript">
             function start() {
                 let initial_notification = [
@@ -40,12 +41,12 @@
                 const changeIDButton = document.querySelector('#change-id');
 
                 editButton.addEventListener('click', _ => {
-                    console.log(location.origin + '/edit' + document.body.dataset.path);
+                    //console.log(location.origin + '/edit' + document.body.dataset.path);
                     location.href = location.origin + '/edit' + document.body.dataset.path;
                 })
 
                 document.addEventListener('click', _ => {
-                    console.log(document.body.dataset.mode);
+                    //console.log(document.body.dataset.mode);
                     if (document.body.dataset.mode == 'collection') {
                         addButton.parentNode.setAttribute('hidden', 'true');
                         renameButton.parentNode.setAttribute('hidden', 'true');
@@ -67,8 +68,14 @@
                         e.target.dataset.id
                     )
                     .then((data) => {
-                        if (data) {
-                            fetch('/config/change-id/' + location.search, {
+                        notify_if_error(async (error) => {
+                            if (!data || data.length == 0) {
+                                error('ID を入力してください');
+                            } else if (data == e.target.dataset.id) {
+                                error('変更前後で異なる ID を入力してください');
+                            }
+
+                            await fetch('/config/change-id/' + location.search, {
                                 method: 'POST', // or 'PUT'
                                 headers: {
                                 'Content-Type': 'application/json',
@@ -82,70 +89,68 @@
                                 if (data.redirection) {
                                     location.href = location.origin + '/config/add/?id=' + data.new_id;
                                 } else {
-                                    throw new Error('Error!')
+                                    error('処理が正常に終了しませんでした');
                                 }
-                            })
-                            .catch((error) => {
-                                console.error(error);
                             });
-                        } else {
-                            throw new Error('no data')
-                        }
+                        });
                     })
-                    .catch((error) => {
-                        console.error(error);
+                    .catch((err) => {
+                        console.error(err);
                     });
                 });
 
                 addButton.addEventListener('click', _ => {
-                    if (document.body.dataset.mode) {
-                        UIkit.modal.prompt(
+                    notify_if_error(async (error) => {
+                        if (!document.body.dataset.mode || document.body.dataset.mode.length == 0) {
+                            error('chapter/section/story を選んでください');
+                        }
+
+                        await UIkit.modal.prompt(
                             '新しい ' + document.body.dataset.mode + ' の作成：',
                             'new-' + document.body.dataset.mode + '-' + Date.now()
                         )
-                        .then((data) => {
-                            if (data) {
-                                fetch('/config/add/create/' + location.search, {
-                                    method: 'POST', // or 'PUT'
-                                    headers: {
-                                    'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        mode: document.body.dataset.mode,
-                                        path: document.body.dataset.path,
-                                        title: data
-                                    }),
-                                })
-                                .then((response) => response.json())
-                                .then((data) => {
-                                    if (data.redirection) {
-                                        location.reload()
-                                    } else {
-                                        throw new Error('Error!')
-                                    }
-                                })
-                                .catch((error) => {
-                                    console.error(error);
-                                });
-                            } else {
-                                throw new Error('Write title');
+                        .then(async (data) => {
+                            if (!data || data.length == 0) {
+                                error('タイトルを入力してください');
                             }
+
+                            await fetch('/config/add/create/' + location.search, {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    mode: document.body.dataset.mode,
+                                    path: document.body.dataset.path,
+                                    title: data
+                                }),
+                            })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.redirection) {
+                                    location.reload()
+                                } else {
+                                    error('処理が正常に終了しませんでした');
+                                }
+                            });
                         })
-                        .catch((error) => {
-                            console.error(error);
+                        .catch((err) => {
+                            console.error(err);
                         });
-                    } else {
-                        console.error('Select a chapter/section/story');
-                    }
+                    });
                 });
 
                 removeButton.addEventListener('click', _ => {
-                    if (document.body.dataset.path) {
-                        UIkit.modal.confirm(
+                    notify_if_error(async (error) => {
+                        if (!document.body.dataset.path || document.body.dataset.path.length == 0) {
+                            error('chapter/section/story を選んでください');
+                        }
+
+                        await UIkit.modal.confirm(
                             document.body.dataset.mode + ': ' + document.body.dataset.title + ' を削除しますか？'
                         )
-                        .then(_ => {
-                            fetch('/config/add/remove/' + location.search, {
+                        .then(async _ => {
+                            await fetch('/config/add/remove/' + location.search, {
                                 method: 'POST', // or 'PUT'
                                 headers: {
                                 'Content-Type': 'application/json',
@@ -162,60 +167,55 @@
                                 } else if (data.back) {
                                     location.href = location.origin + '/config/';
                                 } else {
-                                    throw new Error('Error!')
+                                    error('処理が正常に終了しませんでした');
                                 }
-                            })
-                            .catch((error) => {
-                                console.error(error);
                             });
-                        }, _ => {
-                            console.error('Rejected');
+                        })
+                        .catch((err) => {
+                            console.error(err);
                         });
-                    } else {
-                        console.error('Select a chapter/section/story');
-                    }
+                    });
                 });
 
                 renameButton.addEventListener('click', _ => {
-                    if (document.body.dataset.path) {
-                        UIkit.modal.prompt(
+                    notify_if_error(async (error) => {
+                        if (!document.body.dataset.path || document.body.dataset.path.length == 0) {
+                            error('chapter/section/story を選んでください');
+                        }
+
+                        await UIkit.modal.prompt(
                             document.body.dataset.title + ' の名前を変更しますか？',
                             document.body.dataset.title
                         )
-                        .then((data) => {
-                            if (data) {
-                                fetch('/config/add/rename/' + location.search, {
-                                    method: 'POST', // or 'PUT'
-                                    headers: {
-                                    'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        mode: document.body.dataset.mode,
-                                        path: document.body.dataset.path,
-                                        title: data
-                                    }),
-                                })
-                                .then((response) => response.json())
-                                .then((data) => {
-                                    if (data.redirection) {
-                                        location.reload()
-                                    } else {
-                                        throw new Error('Error!')
-                                    }
-                                })
-                                .catch((error) => {
-                                    console.error(error);
-                                });
-                            } else {
-                                throw new Error('Write title')
+                        .then(async (data) => {
+                            if (!data || data.length == 0) {
+                                error('タイトルを入力してください');
                             }
 
-                        }, _ => {
-                            console.error('Rejected');
+                            await fetch('/config/add/rename/' + location.search, {
+                                method: 'POST', // or 'PUT'
+                                headers: {
+                                'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    mode: document.body.dataset.mode,
+                                    path: document.body.dataset.path,
+                                    title: data
+                                }),
+                            })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.redirection) {
+                                    location.reload()
+                                } else {
+                                    error('処理が正常に終了しませんでした');
+                                }
+                            });
+                        })
+                        .catch((err) => {
+                            console.error(err);
                         });
-                    } else {
-                        console.error('Select a chapter/section/story');
-                    }
+                    });
                 });
 
                 function notify() {

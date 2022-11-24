@@ -96,11 +96,11 @@ function start() {
             if (data.redirection) {
                 location.reload()
             } else {
-                throw new Error('Error!')
+                throw new Error('処理が正常に終了しませんでした');
             }
         })
-        .catch((error) => {
-            console.error('Error:', error);
+        .catch((err) => {
+            console.error(err);
         });
 
 

@@ -1,0 +1,63 @@
+
+<script type="text/javascript">
+
+/*
+    usage:
+        notify_if_error(async (error) => {
+            ...
+            error('something to notify');
+            ...
+            ...
+        });
+
+    ※ 引数に完全な同期関数を使った場合、async は必要ない
+    ※ 非同期関数の場合は error 関数のスルーを防ぐため await を使って、部分的に完全に同期処理する
+*/
+
+class CustomError extends Error {
+    constructor(...params) {
+        // Pass remaining arguments (including vendor specific ones) to parent constructor
+        super(...params);
+        this.name = 'CustomError';
+    }
+}
+
+async function notify_if_error(func, ...args) {
+
+    function error(message, obj = {}) {
+        let custom_event = new CustomEvent('notify-if-error', {
+            detail: Object.assign(obj, { message: message })
+        });
+        let custom_error = new CustomError(message);
+
+        document.dispatchEvent(custom_event);
+        throw custom_error;
+    }
+
+    function uikit_notify(event) {
+        UIkit.notification({
+                message: '<span class="material-symbols-outlined" style="vertical-align: middle;">error</span>' +
+                         '<span style="vertical-align: middle; padding-left: 1rem;">' + event.detail.message + '</span>',
+                status: 'danger',
+                pos: 'bottom-right',
+                timeout: 3000
+        });
+    }
+
+    document.addEventListener('notify-if-error', uikit_notify, { once: true });
+
+    try {
+        await func(error, ...args);
+        document.removeEventListener('notify-if-error', uikit_notify);
+    } catch(e) {
+
+        if (e.name == 'CustomError') {
+            console.error(e);
+        } else {
+            document.removeEventListener('notify-if-error', uikit_notify);
+            throw e;
+        }
+    }
+}
+
+</script>

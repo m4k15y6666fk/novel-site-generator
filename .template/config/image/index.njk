@@ -25,6 +25,7 @@
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/uikit@3.15.12/dist/js/uikit-icons.min.js"></script>
 
+        {% include ".template/error.njk" %}
         <script type="text/javascript">
             function start() {
                 console.log('start');
@@ -50,6 +51,9 @@
                         if (data.reload) {
                             location.reload();
                         }
+                    })
+                    .catch((err) => {
+                        console.error(err);
                     });
                 });
 
@@ -58,14 +62,16 @@
                         navigator.clipboard.writeText("\{\{ html.img(\"" + e.target.dataset.hash + "\") | safe \}\}")
                         .then((success) => {
                             UIkit.notification({
-                                message: '<span uk-icon=\'icon: check\'></span> クリップボードにコピーしました',
+                                message: '<span uk-icon=\'icon: check\'></span>' +
+                                         '<span style="padding-left: 1rem;">クリップボードにコピーしました</span>',
                                 status: 'success',
                                 pos: 'bottom-right',
                                 timeout: 1000
                             });
                         }, (error) => {
                             UIkit.notification({
-                                message: '<span uk-icon=\'icon: close\'></span> クリップボードへのコピーが失敗しました',
+                                message: '<span uk-icon=\'icon: close\'></span>' +
+                                         '<span style="padding-left: 1rem;">クリップボードへのコピーが失敗しました</span>',
                                 status: 'danger',
                                 pos: 'bottom-right',
                                 timeout: 1000
@@ -96,8 +102,9 @@
                                     location.reload();
                                 }
                             });
-                        }, _ => {
-                            location.reload();
+                        })
+                        .catch((err) => {
+                            console.error(err);
                         });
                     });
                 }
@@ -105,37 +112,42 @@
                 for (let renameButton of document.querySelectorAll('.title-selector')) {
                     let el = renameButton;
                     el.addEventListener('click', _ => {
-                        UIkit.modal.prompt(
-                            'ハッシュ値：' + el.dataset.hash + ' のデータの新しいタイトル：',
-                            el.textContent
-                        )
-                        .then((data) => {
-                            if (data.length == 0) {
-                                throw new Error('write new title');
-                            }
-
-                            fetch('/config/image/rename/', {
-                                method: 'POST', // or 'PUT'
-                                headers: {
-                                'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    hash: el.dataset.hash,
-                                    title: data
-                                })
-                            })
-                            .then((res) => res.json())
-                            .then((data) => {
-                                if (data.reload) {
-                                    location.reload();
+                        notify_if_error(async (error) => {
+                            await UIkit.modal.prompt(
+                                'ハッシュ値：' + el.dataset.hash + ' のデータの新しいタイトル：',
+                                el.textContent
+                            )
+                            .then(async (data) => {
+                                if (!data || data.length == 0) {
+                                    error('タイトルを入力してください');
+                                } else if (data == el.textContent) {
+                                    error('変更前後で異なるタイトルを入力してください');
                                 }
+
+                                await fetch('/config/image/rename/', {
+                                    method: 'POST', // or 'PUT'
+                                    headers: {
+                                    'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        hash: el.dataset.hash,
+                                        title: data
+                                    })
+                                })
+                                .then((res) => res.json())
+                                .then((data) => {
+                                    if (data.reload) {
+                                        location.reload();
+                                    } else {
+                                        error('処理が正常に終了しませんでした');
+                                    }
+                                });
+                            })
+                            .catch((err) => {
+                                console.error(err);
                             });
-                        }, _ => {
-                            location.reload();
-                        })
-                        .catch((error) => {
-                            console.error(error);
                         });
+
                     });
                 }
             }

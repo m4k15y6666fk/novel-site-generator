@@ -962,25 +962,28 @@ app.post('/config/image/upload/', source_is_set, async (req, res) => {
     }
 
 
-    for (let img of images) {
-        let data = mimetype(img);
-        json.push({
-            hash: hash,
-            title: path.parse(img).name,
-            type: data.type,
-            date: (new Date()).toLocaleString(),
-            src: 'data:' + data.type + ';base64,' + data.buffer.toString('base64')
-        });
+    if (Array.isArray(images) && images.length > 0) {
+        for (let img of images) {
+            let data = mimetype(img);
+            json.push({
+                hash: hash,
+                title: path.parse(img).name,
+                type: data.type,
+                date: (new Date()).toLocaleString(),
+                src: 'data:' + data.type + ';base64,' + data.buffer.toString('base64')
+            });
 
-        break;
+            break;
+        }
+
+        fs.outputJsonSync(img_file, json);
+
+        await git.add(path.join(global.source));
+        await git.commit(
+            global.source,
+            '画像データの追加：' + images[0]
+        );
     }
-    fs.outputJsonSync(img_file, json);
-
-    await git.add(path.join(global.source));
-    await git.commit(
-        global.source,
-        '画像データの追加：' + images[0]
-    );
 
     res.type('.json');
     res.send({ reload: true });
@@ -1261,8 +1264,11 @@ app.post('/render',  async (req, res) => {
     }
     console.log('POST from ID: ' + req.body.id);
 
-    //console.log(fs.readdirSync('read'));
-    //console.log(fs.existsSync('read/' + fs.readdirSync('read')[0]));
+
+    for (let remove of glob.sync(path.join(script_tmp_dir, 'input-*'))) {
+        console.log('Remove: ' + remove);
+        fs.removeSync(remove);
+    }
     let tmp_dir = path.join(script_tmp_dir, 'input-' + browser_id + '-' + gen_random(6));
 
     console.log('Create: ' + tmp_dir);

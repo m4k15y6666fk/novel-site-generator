@@ -31,5 +31,5 @@ if (!fs.existsSync(archive_home)) {
 
 for (let repo of fs.readdirSync(repo_home)) {
     console.log('Archive repository: ' + repo);
-    fs.moveSync(path.join(repo_home, repo), path.join(archive_home, repo + Date.now()));
+    fs.moveSync(path.join(repo_home, repo), path.join(archive_home, repo + '-' + Date.now().toString(36)));
 }
