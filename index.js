@@ -698,7 +698,7 @@ app.post('/config/clean-all/', source_is_set, (req, res) => {
 
 
 
-function createWindow(url, maximize, devtools) {
+function createWindow(url = 'http://localhost:8080/', { maximize = true, devtools = true } = {}) {
     // ブラウザウインドウを作成します。
     const mainWindow = new electron.BrowserWindow({
         width: 800,
@@ -769,13 +769,13 @@ electron.app.whenReady()
     });
 })
 .then(port => {
-    createWindow('http://localhost:' + port + '/init/?select=true', true, true);
+    createWindow('http://localhost:' + port + '/init/?select=true', { devtools: false });
 
     electron.app.on('activate', () => {
         // macOS では、Dock アイコンのクリック時に他に開いているウインドウがない
         // 場合、アプリのウインドウを再作成するのが一般的です。
         if (electron.BrowserWindow.getAllWindows().length === 0) {
-            createWindow('http://localhost:' + port + '/init/?select=true', true, true);
+            createWindow('http://localhost:' + port + '/init/?select=true', { devtools: false });
         }
     });
 });
@@ -1386,7 +1386,7 @@ global.imageWindow = false;
 app.use('/new-window/', express.text());
 app.post('/new-window/', source_is_set, async (req, res) => {
     if (!global.imageWindow) {
-        let win = createWindow('http://localhost:' + global.initialPort + req.body, false, true);
+        let win = createWindow('http://localhost:' + global.initialPort + req.body, { maximize: false, devtools: false });
         global.imageWindow = true;
         win.on('closed', _ => {
             global.imageWindow = false;
