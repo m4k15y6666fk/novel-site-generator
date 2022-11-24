@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ja-JP">
+    <head>
+        {% set file_name = path.parse(page.inputPath).name %}
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>リダイレクト</title>
+
+        <script type="text/javascript">
+            location.href = location.origin + '{{ path.url.join("/", "short", file_name) | url }}';
+        </script>
+    </head>
+
+    <body></body>
+</html>

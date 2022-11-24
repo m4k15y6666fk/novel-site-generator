@@ -1,6 +1,6 @@
 {
   "name": "Novel Site Generator（β版）",
-  "version": "0.1.0-20221119",
+  "version": "0.2.0-20221125",
   "description": "小説サイトを作るためのツール",
   "main": "index.js",
   "scripts": {

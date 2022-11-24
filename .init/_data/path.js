@@ -9,5 +9,11 @@ module.exports = {
         return path.join(...array);
     },
 
-    base: path.parse(__dirname).dir
+    base: path.parse(__dirname).dir,
+
+    url: {
+        join: (...str) => {
+            return path.posix.join(...str);
+        }
+    }
 }
