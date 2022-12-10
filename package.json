@@ -1,6 +1,6 @@
 {
-  "name": "Novel Site Generator（β版）",
-  "version": "0.2.0-20221125",
+  "name": "Novel Site Generator（α版）",
+  "version": "0.2.1-20221211",
   "description": "小説サイトを作るためのツール",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "keywords": [],
   "author": "M4K-15Y-6666-FK",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@11ty/eleventy": "^1.0.2",
     "commander": "^9.4.1",
     "electron": "^21.2.3",
